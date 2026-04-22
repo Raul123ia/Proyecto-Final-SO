@@ -1,0 +1,15 @@
+# Archivos de compilación de CMake
+build/
+bin/
+obj/
+*.exe
+*.out
+*.app
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Configuración de editores (VSC)
+.vscode/
+*.swp
