@@ -1,4 +1,4 @@
-#include "GestorRecursos.h" // Incluye la definición de la clase GestorRecursos
+#include "../core/GestorRecursos.h"
 
 GestorRecursos::GestorRecursos(uint32_t memoriaTotal, uint32_t cpusTotales)
     : memoria(memoriaTotal), cpu(cpusTotales) {} // Inicializa los gestores de memoria y CPU

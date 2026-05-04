@@ -1,7 +1,7 @@
 #pragma once // Evita inclusiones múltiples del archivo de cabecera
 
-#include "GestorMemoria.h" // Incluye la clase encargada de gestionar la memoria
-#include "RecursoCPU.h" // Incluye la clase que administra el uso de CPU
+#include "GestorMemoria.h"
+#include "../src/RecursoCPU.h"
 #include <cstdint> // Tipos enteros de tamaño fijo (uint32_t, uint64_t)
 
 class GestorRecursos {

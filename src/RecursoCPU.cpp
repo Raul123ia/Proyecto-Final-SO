@@ -1,4 +1,4 @@
-#include "RecursoCPU.h" // Incluye la definición de la clase RecursoCPU
+#include "../core/RecursoCPU.h"
 #include <iostream> // Para entrada/salida estándar (cout)
 
 RecursoCPU::RecursoCPU(uint32_t total)

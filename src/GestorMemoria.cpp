@@ -1,4 +1,4 @@
-#include "GestorMemoria.h" // Incluye la definición de la clase GestorMemoria
+#include "../core/GestorMemoria.h"
 #include <iostream> // Para uso de std::cout
 
 GestorMemoria::GestorMemoria(uint32_t memoriaTotal)
