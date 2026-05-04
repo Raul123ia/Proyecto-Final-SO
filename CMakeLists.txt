@@ -11,4 +11,11 @@ include_directories(src/core src/ipc src/ui)
 
 # Crear el ejecutable final vinculando el main
 # Conforme agreguen archivos .cpp (como scheduler.cpp o process.cpp), se listan aquí
-add_executable(simulador src/main.cpp)
+add_executable(simulador src/main.cpp
+        src/RecursoCPU.cpp
+        src/RecursoCPU.h
+        src/GestorMemoria.cpp
+        src/GestorMemoria.h
+        src/GestorRecursos.cpp
+        src/GestorRecursos.h
+)
