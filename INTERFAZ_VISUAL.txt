@@ -1,0 +1,154 @@
+╔══════════════════════════════════════════════════════╗
+║     SIMULADOR - GUI (Win32)                          ║
+║  ┌─────────────┬────────────┬───────────┐            ║
+║  │ Crear       │ Tick       │ Salir     │            ║
+║  └─────────────┴────────────┴───────────┘            ║
+║                                                      ║
+║  PID    Name        State       Priority Burst Mem   ║
+║  ─────────────────────────────────────────────────   ║
+║  1      init        EJECUTANDO  1        9    128    ║
+║  2      worker      LISTO       2        7    64     ║
+║  3      proc_1      LISTO       1        5    64     ║
+║  4      proc_2      TERMINADO   2        0    32     ║
+║                                                      ║
+║                                                      ║
+║                                                      ║
+║                                                      ║
+╚══════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+INTERFAZ VISUAL DE LA GUI WIN32
+═══════════════════════════════════════════════════════════════════
+
+COMPONENTES:
+────────────
+
+1. BARRA DE BOTONES (Superiores)
+   ┌─────────────┬────────────┬───────────┐
+   │ Crear       │ Tick       │ Salir     │
+   └─────────────┴────────────┴───────────┘
+
+   • Crear:  Añade un nuevo proceso a la cola LISTO
+   • Tick:   Avanza la simulación (ejecuta un proceso LISTO)
+   • Salir:  Cierra la aplicación
+
+2. ÁREA DE VISUALIZACIÓN (Tabla de Procesos)
+
+   Columnas:
+   ├─ PID        : Identificador único del proceso
+   ├─ Name       : Nombre del proceso
+   ├─ State      : LISTO | EJECUTANDO | ESPERANDO | TERMINADO
+   ├─ Priority   : Nivel de prioridad (1 = mayor)
+   ├─ Burst      : Tiempo de CPU restante
+   └─ Mem        : Memoria asignada en MB
+
+3. FLUJO DE USO:
+
+   Arranque:
+   ├─ Se crean 2 procesos iniciales (init, worker)
+   ├─ Se muestran en la tabla
+   └─ Se espera acción del usuario
+
+   Al Pulsar "Crear":
+   ├─ Se añade un nuevo proceso
+   ├─ Nombre: proc_win_N (N = contador)
+   ├─ Ráfaga: 5 unidades
+   ├─ Prioridad: 1
+   ├─ Memoria: 64 MB
+   ├─ Estado: LISTO
+   └─ Se refresaca la tabla
+
+   Al Pulsar "Tick":
+   ├─ El simulador busca un proceso en LISTO
+   ├─ Lo cambia a EJECUTANDO
+   ├─ Decrementa su Burst en 1 unidad
+   ├─ Si Burst llega a 0 → TERMINADO
+   └─ Se refresaca la tabla
+
+4. EJEMPLO DE EJECUCIÓN:
+
+   PASO 0 - Inicial (después de arranque)
+   ───────────────────────────────────────
+   PID│Name   │State      │Priority│Burst│Mem
+   ─────────────────────────────────────────
+   1  │init   │LISTO      │1       │10   │128
+   2  │worker │LISTO      │2       │7    │64
+
+   PASO 1 - Después de hace clic en "Crear"
+   ─────────────────────────────────────────
+   PID│Name       │State      │Priority│Burst│Mem
+   ─────────────────────────────────────────
+   1  │init       │LISTO      │1       │10   │128
+   2  │worker     │LISTO      │2       │7    │64
+   3  │proc_win_1 │LISTO      │1       │5    │64
+
+   PASO 2 - Después de hacer clic en "Tick"
+   ─────────────────────────────────────────
+   PID│Name       │State      │Priority│Burst│Mem
+   ─────────────────────────────────────────
+   1  │init       │EJECUTANDO │1       │9    │128
+   2  │worker     │LISTO      │2       │7    │64
+   3  │proc_win_1 │LISTO      │1       │5    │64
+
+   PASO 3 - Después de hacer clic en "Tick" de nuevo
+   ──────────────────────────────────────────────────
+   PID│Name       │State      │Priority│Burst│Mem
+   ─────────────────────────────────────────
+   1  │init       │EJECUTANDO │1       │8    │128
+   2  │worker     │EJECUTANDO │2       │6    │64
+   3  │proc_win_1 │LISTO      │1       │5    │64
+
+═══════════════════════════════════════════════════════════════════
+CONSOLA DEL SIMULADOR
+═══════════════════════════════════════════════════════════════════
+
+La interfaz de consola muestra información similar pero en formato texto:
+
+% ./simulador.exe
+Iniciando Simulador de Gestor de Procesos...
+Simulador - Vista de consola
+Comandos: (c) crear proceso, (t) tick, (l) listar, (q) salir
+> c
+Proceso creado.
+--- Estado del sistema ---
+PID     Name    State   Priority        Burst   Mem
+1       init    LISTO   1       10      128
+2       worker  LISTO   2       7       64
+3       proc_1  LISTO   1       5       64
+> t
+Tick ejecutado.
+--- Estado del sistema ---
+PID     Name    State   Priority        Burst   Mem
+1       init    EJECUTANDO      1       9       128
+2       worker  LISTO   2       7       64
+3       proc_1  LISTO   1       5       64
+> q
+Saliendo de la vista...
+
+═══════════════════════════════════════════════════════════════════
+CÓMO EJECUTAR LOCALMENTE
+═══════════════════════════════════════════════════════════════════
+
+Win32 GUI (recomendado para ver la interfaz):
+  C:\> .\build\simulador_win.exe
+  → Se abrirá una ventana con la tabla y botones
+
+Consola (para entrada manual de comandos):
+  C:\> .\build\simulador.exe
+  → Interfaz interactiva en terminal
+
+═══════════════════════════════════════════════════════════════════
+CARACTERÍSTICAS DEL SIMULADOR
+═══════════════════════════════════════════════════════════════════
+
+✓ Creación dinámica de procesos
+✓ Estados de proceso (LISTO, EJECUTANDO, ESPERANDO, TERMINADO)
+✓ Planificación simple (FCFS - primero en llegar, primero en ejecutar)
+✓ Decrementación de ráfaga con cada paso
+✓ Prioridades y memoria asignada
+✓ Múltiples vistas (consola + GUI Win32 + GUI Qt)
+✓ Thread-safe (mutex en Model)
+✓ Arquitectura MVC limpia
+
+═══════════════════════════════════════════════════════════════════
+
