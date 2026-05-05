@@ -7,6 +7,13 @@
 #include <cstdint>
 #include <stdexcept>
 #include "Proceso.h"
+#include "GestorComunicacion.h" // Necesario para conocer el módulo de tu compañero
+
+// Enum para identificar el servicio solicitado al Kernel
+enum class TipoLlamada {
+    WAIT_SEMAFORO,
+    SIGNAL_SEMAFORO
+};
 
 enum class TipoAlgoritmo {
     FCFS,
@@ -60,10 +67,11 @@ public:
     void suspender(uint32_t pid);
     void reanudar(uint32_t pid);
     void finalizar(uint32_t pid, CausaTerminacion causa);
-    void Planificador::ejecutarDespachador();
+    void ejecutarDespachador();
     // Getters para el estado general del sistema (útil para la UI)
     uint64_t obtenerTiempoGlobal() const;
     uint32_t obtenerPidEnEjecucion() const;
+    bool llamadaAlSistema(TipoLlamada tipo, std::string recurso, GestorComunicacion& ipc);
 };
 
 #endif // PLANIFICADOR_H
