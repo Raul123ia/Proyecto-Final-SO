@@ -45,14 +45,14 @@ bool Planificador::llamadaAlSistema(TipoLlamada tipo, std::string recurso, Gesto
     switch (tipo) {
         
         case TipoLlamada::WAIT_SEMAFORO: {
-            // Delegamos la petición de permisos al módulo IPC de tu compañero
+            // Delegamos la petición de permisos al módulo IPC (que maneja los semáforos y la sincronización)
             bool recurso_obtenido = ipc.esperarSemaforo(recurso, pid_solicitante);
             
             if (!recurso_obtenido) {
                 // [Lógica del OS]: El IPC denegó el acceso (retornó false).
                 // El proceso debe abandonar la CPU inmediatamente.
                 
-                // suspender(pid_solicitante); // TODO: Implementar más al rato
+                 suspender(pid_solicitante); // TODO: Implementar más al rato
                 
                 // NOTA: Al suspenderlo, la variable pid_en_ejecucion deberá volver a 0 
                 // para que el Despachador meta a otro proceso en el siguiente ciclo.
@@ -69,7 +69,7 @@ bool Planificador::llamadaAlSistema(TipoLlamada tipo, std::string recurso, Gesto
                 // [Lógica del OS]: El IPC nos avisa que alguien estaba esperando este recurso 
                 // y acaba de ganar el acceso. Hay que sacarlo de su estado de bloqueo.
                 
-                // reanudar(pid_despertado); // TODO: Implementar más al rato
+                 reanudar(pid_despertado); // TODO: Implementar más al rato
                 
                 // NOTA: Al reanudarlo, este proceso pasará a la cola_listos para 
                 // volver a competir por la CPU en el futuro.
@@ -182,14 +182,55 @@ void Planificador::ejecutarCicloCompleto() {
 uint64_t Planificador::obtenerTiempoGlobal() const { return reloj_global; }
 uint32_t Planificador::obtenerPidEnEjecucion() const { return pid_en_ejecucion; }
 
-// Stubs (métodos vacíos por ahora para que el código compile sin errores).
-// Se llenarán cuando el equipo conecte el gestor de recursos o el IPC.
+
 void Planificador::suspender(uint32_t pid) {
-    // Futura lógica para mover un proceso a cola_suspendidos
+   // 1. Accedemos de forma segura al PCB del proceso en nuestra tabla central
+    Proceso& p_actual = tabla_procesos.at(pid);
+
+    // 2. Cambiamos su estado lógico indicando que ya no es elegible para la CPU
+    p_actual.actualizarEstado(EstadoProceso::ESPERANDO);
+
+    // 3. ¿El proceso que estamos suspendiendo es el que actualmente ocupa la CPU?
+    // (Casi siempre será así cuando proviene de una System Call)
+    if (pid_en_ejecucion == pid) {
+        // Desalojamos la CPU (El hardware queda "idle")
+        pid_en_ejecucion = 0; 
+        
+        // Reseteamos el cronómetro por si estábamos usando Round Robin
+        ticks_ejecutados_quantum = 0; 
+    }
+
+    // 4. Lo registramos en la cola general de suspendidos del Sistema Operativo
+    cola_suspendidos.push(pid);
+    
+    // Log opcional para la consola
+    // std::cout << "[Kernel] El proceso " << pid << " ha sido suspendido y desalojado de la CPU.\n"; 
+
 }
 
 void Planificador::reanudar(uint32_t pid) {
-    // Futura lógica para regresarlo a cola_listos
+    // 1. Localizamos el proceso en la memoria
+    Proceso& p_actual = tabla_procesos.at(pid);
+
+    // 2. Cambiamos su estado de vuelta a LISTO
+    p_actual.actualizarEstado(EstadoProceso::LISTO);
+
+    // 3. Lo metemos a la cola de listos para que vuelva a competir por la CPU
+    cola_listos.push(pid);
+
+    /* 
+      NOTA DE ARQUITECTURA: 
+      Idealmente, el proceso debería ser borrado de 'cola_suspendidos'. 
+      Sin embargo, std::queue no permite eliminar elementos intermedios fácilmente.
+      
+      Soluciones comunes a nivel Kernel:
+      A) Cambiar cola_suspendidos a un std::list<uint32_t> que sí permite borrado (p.remove(pid)).
+      B) Ignorar cola_suspendidos para bloqueos de semáforos, ya que tu compañero 
+         de IPC ya mantiene sus propias colas ('procesos_bloqueados') por cada recurso.
+    */
+    
+    // Log opcional para la consola
+    // std::cout << "[Kernel] El proceso " << pid << " ha sido reanudado y devuelto a la cola de listos.\n";
 }
 
 void Planificador::finalizar(uint32_t pid, CausaTerminacion causa) {
