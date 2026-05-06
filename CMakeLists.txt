@@ -14,9 +14,9 @@ include_directories(src/core src/ipc src/ui)
 add_executable(simulador
         src/core/GestorRecursos.cpp
         src/core/GestorRecursos.h
-        src/planificador/GestorLogs.cpp
+        src/GestorLogs/GestorLogs.cpp
         src/core/GestorLogs.h
-        src/planificador/CausaTerminacion.cpp
+        src/GestorLogs/CausaTerminacion.cpp
         src/core/CausaTerminacion.h
 
 )
