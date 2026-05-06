@@ -1,4 +1,4 @@
-#include "GestorLogs.h"
+#include "../core/GestorLogs/GestorLogs.h"
 
 // Constructor
 GestorLogs::GestorLogs() {

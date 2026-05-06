@@ -13,10 +13,10 @@ include_directories(src/core src/ipc src/ui)
 # Conforme agreguen archivos .cpp (como scheduler.cpp o process.cpp), se listan aquí
 add_executable(simulador
         src/core/GestorRecursos.cpp
-        src/core/GestorRecursos.h
+        src/core/GestorRecursos/GestorRecursos.h
         src/GestorLogs/GestorLogs.cpp
-        src/core/GestorLogs.h
-        src/GestorLogs/CausaTerminacion.cpp
-        src/core/CausaTerminacion.h
+        src/core/GestorLogs/GestorLogs.h
+        src/CausaTerminacion/CausaTerminacion.cpp
+        src/core/CausaTerminacion/CausaTerminacion.h
 
 )
