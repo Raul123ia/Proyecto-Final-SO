@@ -27,4 +27,5 @@ public:
 
 };
 
-#endif // CAUSA_TERMINACION_H
+/#endif // CAUSA_TERMINACION_H
+*/
