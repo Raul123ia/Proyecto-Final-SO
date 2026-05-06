@@ -11,6 +11,9 @@ bool GestorRecursos::validarDisponibilidadMemoria(uint32_t mb) {
 
 void GestorRecursos::reservarMemoria(uint32_t pid, uint32_t mb) {
     if (validarDisponibilidadMemoria(mb)) {
+        if (mapa_memoria.count(pid)) {
+            memoria_usada -= mapa_memoria[pid];
+        }
         memoria_usada += mb;
         mapa_memoria[pid] = mb;
     }
