@@ -1,27 +1,38 @@
-#pragma once // Evita inclusiones múltiples del archivo de cabecera
+#ifndef GESTOR_RECURSOS_H
+#define GESTOR_RECURSOS_H
 
-#include "GestorMemoria.h"
-#include "../src/RecursoCPU.h"
-#include <cstdint> // Tipos enteros de tamaño fijo (uint32_t, uint64_t)
+#include <cstdint>
+#include <string>
+#include <map>
+#include <queue>
 
 class GestorRecursos {
 private:
-    GestorMemoria memoria; // Objeto que gestiona la memoria del sistema
-    RecursoCPU cpu; // Objeto que gestiona el uso de CPUs
+    const uint32_t MAX_MEMORIA = 4096;
+    const int MAX_CPUS = 1;
+
+    uint32_t memoria_usada;
+    int cpus_en_uso;
+
+    std::map<uint32_t, uint32_t> mapa_memoria;
+    std::map<std::string, std::queue<uint32_t>> procesos_bloqueados;
 
 public:
-    GestorRecursos(uint32_t memoriaTotal, uint32_t cpusTotales); // Constructor que inicializa memoria y CPUs
+    GestorRecursos();
 
-    // Métodos seguros con valor de retorno obligatorio
-    [[nodiscard]] bool crearProceso(uint32_t pid, uint32_t memoriaReq); // Crea un proceso asignándole memoria
+    // --- MEMORIA ---
+    bool validarDisponibilidad(uint32_t mb);
+    void reservar(uint32_t pid, uint32_t mb);
+    void liberar(uint32_t pid);
+    bool asignarMemoria(uint32_t pid, uint32_t mb);
 
-    [[nodiscard]] bool terminarProceso(uint32_t pid); // Finaliza un proceso y libera sus recursos
+    // --- CPU ---
+    bool asignarCPU();
+    void liberarCPU();
 
-    [[nodiscard]] bool asignarCPU(uint32_t pid); // Asigna CPU a un proceso
+    // --- FINALIZACIÓN (LO NUEVO IMPORTANTE) ---
+    void finalizar(uint32_t pid);
 
-    void liberarCPU(uint32_t pid); // Libera la CPU ocupada por un proceso
-
-    void ejecutarCiclo(uint64_t ciclos); // Simula la ejecución de ciclos de CPU
-
-    void mostrarEstado() const; // Muestra el estado general del sistema (memoria y CPU)
 };
+
+#endif // GESTOR_RECURSOS_H
