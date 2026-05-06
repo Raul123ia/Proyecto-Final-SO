@@ -1,28 +1,46 @@
 #include "GestorLogs.h"
-#include <iostream>
 
+// Constructor
 GestorLogs::GestorLogs() {
 }
 
-void GestorLogs::anotarEvento(std::string descripcion) {
-    entradas.push_back(descripcion);
+// ================= RAM =================
+
+void GestorLogs::logValidarMemoria(uint32_t mb) {
+    logsRAM.push_back("Validando " + std::to_string(mb) + " MB de RAM");
 }
 
-void GestorLogs::anotarSalida(uint32_t pid, CausaTerminacion causa) {
-    // Como quitamos causaToString() para respetar el diagrama,
-    // resolvemos la conversión internamente dentro de la implementación.
-    std::string causaStr = "DESCONOCIDA";
-    switch (causa) {
-        case CausaTerminacion::NORMAL:       causaStr = "NORMAL"; break;
-        case CausaTerminacion::ERROR:        causaStr = "ERROR"; break;
-        case CausaTerminacion::INTERBLOQUEO: causaStr = "INTERBLOQUEO"; break;
-        case CausaTerminacion::USUARIO:      causaStr = "USUARIO"; break;
-    }
-
-    std::string log = "Proceso " + std::to_string(pid) + " finalizado. Causa: " + causaStr;
-    entradas.push_back(log);
+void GestorLogs::logReservarMemoria(uint32_t pid, uint32_t mb) {
+    logsRAM.push_back("PID " + std::to_string(pid) +
+                      " reserva " + std::to_string(mb) + " MB");
 }
 
-std::vector<std::string> GestorLogs::exportarLogs() {
-    return entradas;
+void GestorLogs::logAsignarMemoria(uint32_t pid, uint32_t mb) {
+    logsRAM.push_back("PID " + std::to_string(pid) +
+                      " asigna " + std::to_string(mb) + " MB");
+}
+
+void GestorLogs::logLiberarMemoria(uint32_t pid, uint32_t mb) {
+    logsRAM.push_back("PID " + std::to_string(pid) +
+                      " libera " + std::to_string(mb) + " MB");
+}
+
+// ================= CPU =================
+
+void GestorLogs::logAsignarCPU(uint32_t pid) {
+    logsCPU.push_back("CPU asignada al PID " + std::to_string(pid));
+}
+
+void GestorLogs::logLiberarCPU() {
+    logsCPU.push_back("CPU liberada");
+}
+
+// ================= FINALIZAR =================
+
+std::vector<std::string> GestorLogs::exportarLogsRAM() const {
+    return logsRAM;
+}
+
+std::vector<std::string> GestorLogs::exportarLogsCPU() const {
+    return logsCPU;
 }

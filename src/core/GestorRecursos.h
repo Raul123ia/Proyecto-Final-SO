@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string>
 #include <map>
-#include <queue>
 
 class GestorRecursos {
 private:
@@ -15,23 +14,23 @@ private:
     int cpus_en_uso;
 
     std::map<uint32_t, uint32_t> mapa_memoria;
-    std::map<std::string, std::queue<uint32_t>> procesos_bloqueados;
 
 public:
     GestorRecursos();
 
     // --- MEMORIA ---
-    bool validarDisponibilidad(uint32_t mb);
-    void reservar(uint32_t pid, uint32_t mb);
-    void liberar(uint32_t pid);
+    bool validarDisponibilidadMemoria(uint32_t mb);
+    void reservarMemoria(uint32_t pid, uint32_t mb);
+    uint32_t liberarMemoria(uint32_t pid);
     bool asignarMemoria(uint32_t pid, uint32_t mb);
 
     // --- CPU ---
     bool asignarCPU();
     void liberarCPU();
 
-    // --- FINALIZACIÓN (LO NUEVO IMPORTANTE) ---
-    void finalizar(uint32_t pid);
+    // --- FINALIZACIÓN ---
+    uint32_t finalizarMemoria(uint32_t pid);
+    void finalizarCPU();
 
 };
 

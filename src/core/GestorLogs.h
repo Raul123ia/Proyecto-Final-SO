@@ -4,19 +4,28 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include "CausaTerminacion.h"
 
 class GestorLogs {
 private:
-    std::vector<std::string> entradas;
+    std::vector<std::string> logsRAM;
+    std::vector<std::string> logsCPU;
 
 public:
     GestorLogs();
 
-    void anotarEvento(std::string descripcion);
-    void anotarSalida(uint32_t pid, CausaTerminacion causa);
-    std::vector<std::string> exportarLogs();
+    // ================= RAM =================
+    void logValidarMemoria(uint32_t mb);
+    void logReservarMemoria(uint32_t pid, uint32_t mb);
+    void logAsignarMemoria(uint32_t pid, uint32_t mb);
+    void logLiberarMemoria(uint32_t pid, uint32_t mb);
+
+    // ================= CPU =================
+    void logAsignarCPU(uint32_t pid);
+    void logLiberarCPU();
+
+    // ================= EXPORTAR  =================
+    std::vector<std::string> exportarLogsRAM() const;
+    std::vector<std::string> exportarLogsCPU() const;
 };
 
-#endif // GESTOR_LOGS_H
-#endif // GESTOR_LOGS_H
+#endif

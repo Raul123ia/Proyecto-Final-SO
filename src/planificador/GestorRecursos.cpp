@@ -5,29 +5,32 @@ GestorRecursos::GestorRecursos() : memoria_usada(0), cpus_en_uso(0) {
 
 // ================= MEMORIA =================
 
-bool GestorRecursos::validarDisponibilidad(uint32_t mb) {
+bool GestorRecursos::validarDisponibilidadMemoria(uint32_t mb) {
     return (memoria_usada + mb <= MAX_MEMORIA);
 }
 
-void GestorRecursos::reservar(uint32_t pid, uint32_t mb) {
-    if (validarDisponibilidad(mb)) {
+void GestorRecursos::reservarMemoria(uint32_t pid, uint32_t mb) {
+    if (validarDisponibilidadMemoria(mb)) {
         memoria_usada += mb;
         mapa_memoria[pid] = mb;
     }
 }
 
-void GestorRecursos::liberar(uint32_t pid) {
+uint32_t GestorRecursos::liberarMemoria(uint32_t pid) {
     if (mapa_memoria.find(pid) != mapa_memoria.end()) {
-        memoria_usada -= mapa_memoria[pid];
+        uint32_t mb_liberados = mapa_memoria[pid];
+        memoria_usada -= mb_liberados;
         mapa_memoria.erase(pid);
+        return mb_liberados;
     }
+    return 0; // Retorna 0 si el PID no tenía memoria asignada
 }
 
 bool GestorRecursos::asignarMemoria(uint32_t pid, uint32_t mb) {
-    if (!validarDisponibilidad(mb)) {
+    if (!validarDisponibilidadMemoria(mb)) {
         return false;
     }
-    reservar(pid, mb);
+    reservarMemoria(pid, mb);
     return true;
 }
 
@@ -47,7 +50,12 @@ void GestorRecursos::liberarCPU() {
 
 // ================= FINALIZAR =================
 
-void GestorRecursos::finalizar(uint32_t pid) {
-    liberar(pid);     // 🔁 Regresa la RAM del proceso
-    liberarCPU();     // 🔁 Libera la CPU
+// Libera SOLO la RAM del proceso y retorna los MB liberados
+uint32_t GestorRecursos::finalizarMemoria(uint32_t pid) {
+    return liberarMemoria(pid);
+}
+
+// Libera SOLO la CPU
+void GestorRecursos::finalizarCPU() {
+    liberarCPU();
 }

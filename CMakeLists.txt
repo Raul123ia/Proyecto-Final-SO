@@ -18,7 +18,5 @@ add_executable(simulador
         src/core/GestorLogs.h
         src/planificador/CausaTerminacion.cpp
         src/core/CausaTerminacion.h
-        src/core/MetodosTemporales.cpp
-        src/core/MetodosTemporales.h
 
 )
