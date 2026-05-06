@@ -45,7 +45,9 @@ bool GestorRecursos::asignarCPU() {
 }
 
 void GestorRecursos::liberarCPU() {
-    cpus_en_uso = 0;
+    if (cpus_en_uso > 0) {
+        cpus_en_uso--;
+    }
 }
 
 // ================= FINALIZAR =================
