@@ -1,7 +1,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QStyleFactory>
 
-#include "core/InterfazGrafica.h"
+#include "core/UI/InterfazGrafica.h"
 
 int main(int argc, char *argv[])
 {

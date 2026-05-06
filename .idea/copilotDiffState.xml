@@ -11,15 +11,6 @@
             </PendingDiffInfo>
           </value>
         </entry>
-        <entry key="$PROJECT_DIR$/src/main.cpp">
-          <value>
-            <PendingDiffInfo>
-              <option name="filePath" value="$PROJECT_DIR$/src/main.cpp" />
-              <option name="originalContent" value="#include &lt;QApplication&gt;&#10;&#10;#include &quot;InterfazGrafica.h&quot;&#10;&#10;int main(int argc, char *argv[])&#10;{&#10;    QApplication app(argc, argv);&#10;&#10;    InterfazGrafica ventana;&#10;    ventana.show();&#10;&#10;    return app.exec();&#10;}" />
-              <option name="updatedContent" value="#include &lt;QtWidgets/QApplication&gt;&#10;#include &lt;QtWidgets/QStyleFactory&gt;&#10;&#10;#include &quot;core/InterfazGrafica.h&quot;&#10;&#10;int main(int argc, char *argv[])&#10;{&#10;    QApplication app(argc, argv);&#10;    app.setApplicationName(QStringLiteral(&quot;SimuladorGestorProcesos&quot;));&#10;    app.setApplicationDisplayName(QStringLiteral(&quot;Simulador de Gestión de Procesos&quot;));&#10;    app.setOrganizationName(QStringLiteral(&quot;CLionProjects&quot;));&#10;    app.setStyle(QStyleFactory::create(QStringLiteral(&quot;Fusion&quot;)));&#10;&#10;    InterfazGrafica ventana;&#10;    ventana.show();&#10;&#10;    return app.exec();&#10;}" />
-            </PendingDiffInfo>
-          </value>
-        </entry>
       </map>
     </option>
   </component>

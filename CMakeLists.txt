@@ -24,8 +24,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 # Es importante incluir los .h y .cpp para que AUTOMOC funcione correctamente
 set(PROJECT_SOURCES
 		src/main.cpp
-		src/core/InterfazGrafica.h
-		src/ui/InterfazGrafica.cpp
+		src/core/UI/InterfazGrafica.h
+		src/UI/InterfazGrafica.cpp
 )
 
 # 7. Crear el ejecutable

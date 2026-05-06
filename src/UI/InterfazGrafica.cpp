@@ -1,4 +1,4 @@
-#include "core/InterfazGrafica.h"
+#include "../core/UI/InterfazGrafica.h"
 
 #include <QAbstractItemView>
 #include <QDialog>
