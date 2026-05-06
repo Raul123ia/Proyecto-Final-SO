@@ -18,5 +18,6 @@ add_executable(simulador
         src/core/GestorLogs/GestorLogs.h
         src/CausaTerminacion/CausaTerminacion.cpp
         src/core/CausaTerminacion/CausaTerminacion.h
+        src/GestorRecursos/GestorRecursos.cpp
 
 )

@@ -14,7 +14,7 @@ public:
     GestorLogs();
 
     // ================= RAM =================
-    void logValidarMemoria(uint32_t mb);
+    void logValidarDisponibilidadMemoria(uint32_t mb);
     void logReservarMemoria(uint32_t pid, uint32_t mb);
     void logAsignarMemoria(uint32_t pid, uint32_t mb);
     void logLiberarMemoria(uint32_t pid, uint32_t mb);

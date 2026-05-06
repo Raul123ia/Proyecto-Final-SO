@@ -6,7 +6,7 @@ GestorLogs::GestorLogs() {
 
 // ================= RAM =================
 
-void GestorLogs::logValidarMemoria(uint32_t mb) {
+void GestorLogs::logValidarDisponibilidadMemoria(uint32_t mb) {
     logsRAM.push_back("Validando " + std::to_string(mb) + " MB de RAM");
 }
 

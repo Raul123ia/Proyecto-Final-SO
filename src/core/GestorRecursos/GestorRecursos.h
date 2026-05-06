@@ -2,8 +2,9 @@
 #define GESTOR_RECURSOS_H
 
 #include <cstdint>
-#include <string>
 #include <map>
+
+class GestorLogs;
 
 class GestorRecursos {
 private:
@@ -15,20 +16,22 @@ private:
 
     std::map<uint32_t, uint32_t> mapa_memoria;
 
-public:
-    GestorRecursos();
+    GestorLogs* logs;
 
-    // --- MEMORIA ---
-    bool validarDisponibilidadMemoria(uint32_t mb);
+public:
+    GestorRecursos(GestorLogs* logs_instance = nullptr);
+
+    // ================= MEMORIA =================
+    bool validarDisponibilidadMemoria(uint32_t mb) const;
     void reservarMemoria(uint32_t pid, uint32_t mb);
     uint32_t liberarMemoria(uint32_t pid);
     bool asignarMemoria(uint32_t pid, uint32_t mb);
 
-    // --- CPU ---
-    bool asignarCPU();
+    // ================= CPU =================
+    bool asignarCPU(uint32_t pid); // Se agregó el pid para que coincida con el log
     void liberarCPU();
 
-    // --- FINALIZACIÓN ---
+    // ================= FINALIZAR =================
     uint32_t finalizarMemoria(uint32_t pid);
     void finalizarCPU();
 
