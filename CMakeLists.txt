@@ -5,6 +5,7 @@ project(SimuladorGestorProcesos)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 # 2. Automatización de herramientas de Qt (Necesario para la UI)
 # Esto permite que CMake maneje los archivos .ui y las macros de Qt automáticamente
 set(CMAKE_AUTOUIC ON)
