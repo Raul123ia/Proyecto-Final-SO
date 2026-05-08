@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
+<<<<<<< HEAD
 # 2. Automatización de herramientas de Qt (Necesario para la UI)
 # Esto permite que CMake maneje los archivos .ui y las macros de Qt automáticamente
 set(CMAKE_AUTOUIC ON)
@@ -40,3 +41,17 @@ if(Qt6_FOUND)
 else()
     message(WARNING "Qt6 no encontrado. Si no vas a compilar la UI, puedes ignorar esto.")
 endif()
+=======
+# Crear el ejecutable final vinculando el main
+# Conforme agreguen archivos .cpp (como scheduler.cpp o process.cpp), se listan aquí
+add_executable(simulador
+        src/core/GestorRecursos.cpp
+        src/core/GestorRecursos/GestorRecursos.h
+        src/GestorLogs/GestorLogs.cpp
+        src/core/GestorLogs/GestorLogs.h
+        src/CausaTerminacion/CausaTerminacion.cpp
+        src/core/CausaTerminacion/CausaTerminacion.h
+        src/GestorRecursos/GestorRecursos.cpp
+
+)
+>>>>>>> origin/Asignación_De_Recursos
