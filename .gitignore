@@ -13,3 +13,5 @@ Thumbs.db
 # Configuración de editores (VSC)
 .vscode/
 *.swp
+# Archivos de depuración de Clion de UI
+cmake-build-debug/
