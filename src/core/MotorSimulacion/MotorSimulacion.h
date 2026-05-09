@@ -36,6 +36,7 @@ public:
     const Planificador& obtenerPlanificador() const;
     const GestorRecursos& obtenerRecursos() const;
     const GestorLogs& obtenerLogs() const;
+    void exportarLogs() const;
     // El puerto de entrada para que las aplicaciones hablen con el Kernel
     bool invocarLlamadaSistema(TipoLlamada tipo, std::string recurso);
 };

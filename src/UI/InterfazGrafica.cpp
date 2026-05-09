@@ -19,12 +19,11 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 
-InterfazGrafica::InterfazGrafica(QWidget *parent)
-    : QMainWindow(parent), m_motor() // Inicializa el motor de simulación
+// Inicializa el motor de simulacióny construye la interfaz gráfica.
+InterfazGrafica::InterfazGrafica (MotorSimulacion &motor, QWidget *parent): QMainWindow(parent), m_motor(motor) 
 {
     construirInterfaz();
     conectarSenales();
-    //cargarDatosMock(); se elimina codigo hardcodeado para cargar datos de prueba, ahora la UI inicia vacía y el usuario puede crear procesos reales desde la interfaz.
     aplicarEstilo();
     actualizarVistas();
 }
@@ -49,7 +48,7 @@ void InterfazGrafica::construirInterfaz()
 
     m_barraMemoria = new QProgressBar(this);
     m_barraMemoria->setObjectName("barraMemoria");
-    m_barraMemoria->setRange(0, m_motor.obtenerRecursos().MAX_MEMORIA);
+    m_barraMemoria->setRange(0, m_motor.obtenerRecursos().obtenerMemoriaMaxima());
     m_barraMemoria->setFormat(tr("%v MB / %m MB"));
     m_barraMemoria->setAlignment(Qt::AlignCenter);
     m_barraMemoria->setTextVisible(true);
@@ -260,7 +259,7 @@ void InterfazGrafica::mostrarColasPlanificacion()
         m_listaListos->addItem(QStringLiteral("PID %1 - %2 | Pri %3")
             .arg(proc.obtenerPid())
             .arg(QString::fromStdString(proc.obtenerNombre()))
-            .arg(proc.prioridad)); 
+            .arg(proc.obtenerPrioridad())); 
     }
 
     // Procesar Cola de Suspendidos
@@ -273,7 +272,7 @@ void InterfazGrafica::mostrarColasPlanificacion()
         m_listaSuspendidos->addItem(QStringLiteral("PID %1 - %2 | Pri %3")
             .arg(proc.obtenerPid())
             .arg(QString::fromStdString(proc.obtenerNombre()))
-            .arg(proc.prioridad));
+            .arg(proc.obtenerPrioridad()));
     }
 }
 //Metodo actualizado para listar procesos y recursos directamente desde tu estructura real, evitando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase Proceso tenga los getters necesarios para acceder a sus atributos de forma segura.
@@ -297,7 +296,7 @@ void InterfazGrafica::listarProcesosYRecursos()
         // TODO: Asegúrate de tener un getter que convierta tu enum EstadoProceso a texto
         m_tablaProcesos->setItem(fila, 2, new QTableWidgetItem(QStringLiteral("Activo"))); 
         
-        m_tablaProcesos->setItem(fila, 3, new QTableWidgetItem(QString::number(proceso.prioridad)));
+        m_tablaProcesos->setItem(fila, 3, new QTableWidgetItem(QString::number(proceso.obtenerPrioridad())));
         m_tablaProcesos->setItem(fila, 4, new QTableWidgetItem(QString::number(proceso.obtenerRafagaRestante())));
         
         // TODO: Reemplaza este 0 con el getter real de la memoria del proceso si es privado
@@ -313,7 +312,7 @@ void InterfazGrafica::mostrarHistorialLogs()
     m_historialLogs->clear();
 
     // Le pedimos los datos reales al sistema a través del motor.
-    auto historial = m_motor.obtenerLogs().exportarLogs();
+    auto historial = m_motor.exportarLogsRAM().exportarLogsCPU();
 
     for (const auto &linea : historial)
     {
@@ -345,7 +344,7 @@ void InterfazGrafica::capturarDatosProceso()
     auto *memoria = new QSpinBox(&dialog);
     // Cambiado: Ahora el límite superior lo dicta el Gestor de Recursos real
     // Si aún no tienes el getter, puedes usar 4096 por ahora.
-    memoria->setRange(1, m_motor.obtenerRecursos().MAX_MEMORIA); 
+    memoria->setRange(1, m_motor.obtenerRecursos().obtenerMemoriaMaxima()); 
     memoria->setValue(256);
 
     form->addRow(tr("Nombre"), nombre);

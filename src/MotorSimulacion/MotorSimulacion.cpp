@@ -50,6 +50,12 @@ void MotorSimulacion::ejecutarPasoSiguiente() {
 
     // FASE 1: GESTIÓN DE EVENTOS E IPC
     if (pidActual != 0) {
+        const Proceso& procesoEnEjecucion = planificador.obtenerDetallesProceso(pidActual);
+        // Aquí podrías revisar si el proceso actual hizo una llamada al sistema que lo bloquea, etc.
+        // Por ejemplo, si el proceso hizo una llamada a un semáforo y no se pudo satisfacer, lo bloqueamos:
+        // if (planificador.llamadaAlSistema(TipoLlamada::WAIT_SEMAFORO, "sem1", comunicacion)) {
+        //     registros.anotarEvento("[Kernel] Proceso " + std::to_string(pidActual) + " bloqueado esperando semáforo 'sem1'.");
+        // }
     }
 
     // FASE 2: DESPACHADOR (CONTEXT SWITCH)

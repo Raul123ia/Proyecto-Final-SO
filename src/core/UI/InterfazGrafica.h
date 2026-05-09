@@ -21,7 +21,7 @@ public:
     ~InterfazGrafica() override = default;
 
     void mostrarColasPlanificacion();
-    void listarProcesosVRecursos();
+    void listarProcesosYRecursos();
     void mostrarHistorialLogs();
     void capturarDatosProceso();
 

@@ -1,4 +1,6 @@
-#include "./Planificador.h"
+#include "core/Planificador/Planificador.h"
+#include "core/Planificador/Proceso.h"
+
 
 // Constructor
 Planificador::Planificador(TipoAlgoritmo _algoritmo, int _quantum)
@@ -248,4 +250,8 @@ std::queue<uint32_t> Planificador::obtenerColaListos() const {
 }
 std::queue<uint32_t> Planificador::obtenerColaSuspendidos() const {
     return cola_suspendidos;
+}
+
+int Proceso::obtenerPrioridad() const {
+    return prioridad;
 }

@@ -30,6 +30,7 @@ public:
     void reservarMemoria(uint32_t pid, uint32_t mb);
     uint32_t liberarMemoria(uint32_t pid);
     bool asignarMemoria(uint32_t pid, uint32_t mb);
+    const uint32_t obtenerMemoriaMaxima() const { return MAX_MEMORIA; }
 
     // ================= CPU =================
     bool asignarCPU(uint32_t pid); // Se agregó el pid para que coincida con el log

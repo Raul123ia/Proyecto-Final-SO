@@ -1,4 +1,4 @@
-#include "../Core/ProductoConsumidor/ProductoConsumidor.h"
+#include "ProductorConsumidor.h"
 #include <iostream>
 
 // Función para simular que un proceso actuando como productor intenta depositar un item en el buffer
