@@ -69,3 +69,8 @@ uint32_t GestorRecursos::finalizarMemoria(uint32_t pid) {
 void GestorRecursos::finalizarCPU() {
     liberarCPU();
 }
+
+// ================= Getters =================
+uint32_t GestorRecursos::obtenerMemoriaUsada() const {
+    return memoria_usada;
+}

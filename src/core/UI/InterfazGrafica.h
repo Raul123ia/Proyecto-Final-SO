@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include <QString>
 #include <QVector>
+#include "core/MotorSimulacion/MotorSimulacion.h"
 
 class QListWidget;
 class QProgressBar;
@@ -15,7 +16,8 @@ class InterfazGrafica final : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit InterfazGrafica(QWidget *parent = nullptr);
+    explicit InterfazGrafica(MotorSimulacion& motor, QWidget *parent = nullptr);
+    
     ~InterfazGrafica() override = default;
 
     void mostrarColasPlanificacion();
@@ -28,29 +30,16 @@ public slots:
     void crearProceso();
 
 private:
-    struct ProcesoMock
-    {
-        int pid{};
-        QString nombre;
-        QString estado;
-        int prioridad{};
-        int rafaga{};
-        int memoria{};
-    };
-
+    MotorSimulacion& m_motor;
 
     void construirInterfaz();
     void conectarSenales();
     void aplicarEstilo();
-    void cargarDatosMock();
     void actualizarVistas();
     void registrarEvento(const QString &mensaje);
-    int memoriaUsada() const;
+    
 
-    QVector<ProcesoMock> m_procesos;
-    QVector<ProcesoMock> m_colaListos;
-    QVector<ProcesoMock> m_colaSuspendidos;
-    QVector<QString> m_historial;
+  //  Variables para almacenar referencias a los widgets clave de la interfaz, para poder actualizarlos dinámicamente.
 
     QListWidget *m_listaListos{};
     QListWidget *m_listaSuspendidos{};

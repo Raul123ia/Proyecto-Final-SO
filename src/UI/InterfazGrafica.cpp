@@ -19,17 +19,12 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 
-namespace
-{
-constexpr int kMemoriaTotalMb = 4096;
-}
-
 InterfazGrafica::InterfazGrafica(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), m_motor() // Inicializa el motor de simulación
 {
     construirInterfaz();
     conectarSenales();
-    cargarDatosMock();
+    //cargarDatosMock(); se elimina codigo hardcodeado para cargar datos de prueba, ahora la UI inicia vacía y el usuario puede crear procesos reales desde la interfaz.
     aplicarEstilo();
     actualizarVistas();
 }
@@ -54,7 +49,7 @@ void InterfazGrafica::construirInterfaz()
 
     m_barraMemoria = new QProgressBar(this);
     m_barraMemoria->setObjectName("barraMemoria");
-    m_barraMemoria->setRange(0, kMemoriaTotalMb);
+    m_barraMemoria->setRange(0, m_motor.obtenerRecursos().MAX_MEMORIA);
     m_barraMemoria->setFormat(tr("%v MB / %m MB"));
     m_barraMemoria->setAlignment(Qt::AlignCenter);
     m_barraMemoria->setTextVisible(true);
@@ -229,98 +224,101 @@ void InterfazGrafica::aplicarEstilo()
             .arg(QStringLiteral("#0F172A"), QStringLiteral("#E5E7EB"), QStringLiteral("#111827"), QStringLiteral("#2F80ED")));
 }
 
-void InterfazGrafica::cargarDatosMock()
-{
-    m_procesos = {
-        {101, tr("Navegador"), tr("Listo"), 2, 18, 640},
-        {102, tr("Editor"), tr("Listo"), 3, 11, 512},
-        {103, tr("Compilador"), tr("Suspendido"), 1, 26, 896},
-        {104, tr("Terminal"), tr("Ejecución"), 0, 8, 128},
-        {105, tr("ServicioBackup"), tr("Suspendido"), 4, 42, 704},
-        {106, tr("Monitor"), tr("Listo"), 1, 7, 256}
-    };
-
-    m_colaListos.clear();
-    m_colaSuspendidos.clear();
-
-    for (const auto &proceso : m_procesos)
-    {
-        if (proceso.estado.compare(tr("Suspendido"), Qt::CaseInsensitive) == 0)
-        {
-            m_colaSuspendidos.push_back(proceso);
-        }
-        else if (proceso.estado.compare(tr("Listo"), Qt::CaseInsensitive) == 0)
-        {
-            m_colaListos.push_back(proceso);
-        }
-    }
-
-    m_historial = {
-        tr("[Sistema] Inicialización de la interfaz completada."),
-        tr("[Sistema] Cargando datos de prueba de procesos."),
-        tr("[CPU] Cola de planificación preparada para visualización.")
-    };
-}
+//Comienzan métodos actualizados para mostrar datos reales desde tu motor de simulación, eliminando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase MotorSimulacion tenga los métodos necesarios para acceder a los datos de forma segura y eficiente.
 
 void InterfazGrafica::actualizarVistas()
 {
     mostrarColasPlanificacion();
-    listarProcesosVRecursos();
+    listarProcesosYRecursos();
     mostrarHistorialLogs();
 
-    const int usados = memoriaUsada();
+    // ¡Le preguntamos directamente a la fuente de la verdad sobre la memoria usada! Esto asegura que la barra siempre refleje el estado real del sistema, sin depender de cálculos locales o datos duplicados.
+    const uint32_t usados = m_motor.obtenerRecursos().obtenerMemoriaUsada();
+    
     m_barraMemoria->setValue(usados);
     m_barraMemoria->setFormat(tr("%v MB / %m MB usados"));
 }
 
+//Metodo actualizado para mostrar las colas de planificación directamente desde tu estructura real, evitando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase Planificador tenga los métodos necesarios para obtener las colas de forma segura.
 void InterfazGrafica::mostrarColasPlanificacion()
 {
-    m_listaListos->clear();
+  m_listaListos->clear();
     m_listaSuspendidos->clear();
 
-    for (const auto &proceso : m_colaListos)
-    {
-        m_listaListos->addItem(QStringLiteral("PID %1 - %2 | Pri %3 | %4 MB")
-                                   .arg(proceso.pid)
-                                   .arg(proceso.nombre)
-                                   .arg(proceso.prioridad)
-                                   .arg(proceso.memoria));
+    // Pedimos copias de las colas para poder leerlas destruyéndolas localmente
+    auto colaListos = m_motor.obtenerPlanificador().obtenerColaListos();
+    auto colaSuspendidos = m_motor.obtenerPlanificador().obtenerColaSuspendidos();
+
+    // Procesar Cola de Listos
+    while (!colaListos.empty()) {
+        uint32_t pid = colaListos.front();
+        colaListos.pop(); // Avanzamos en la copia
+        
+        // Usamos tu función segura
+        const Proceso& proc = m_motor.obtenerPlanificador().obtenerDetallesProceso(pid);
+        
+        m_listaListos->addItem(QStringLiteral("PID %1 - %2 | Pri %3")
+            .arg(proc.obtenerPid())
+            .arg(QString::fromStdString(proc.obtenerNombre()))
+            .arg(proc.prioridad)); 
     }
 
-    for (const auto &proceso : m_colaSuspendidos)
-    {
-        m_listaSuspendidos->addItem(QStringLiteral("PID %1 - %2 | Pri %3 | %4 MB")
-                                        .arg(proceso.pid)
-                                        .arg(proceso.nombre)
-                                        .arg(proceso.prioridad)
-                                        .arg(proceso.memoria));
+    // Procesar Cola de Suspendidos
+    while (!colaSuspendidos.empty()) {
+        uint32_t pid = colaSuspendidos.front();
+        colaSuspendidos.pop();
+        
+        const Proceso& proc = m_motor.obtenerPlanificador().obtenerDetallesProceso(pid);
+        
+        m_listaSuspendidos->addItem(QStringLiteral("PID %1 - %2 | Pri %3")
+            .arg(proc.obtenerPid())
+            .arg(QString::fromStdString(proc.obtenerNombre()))
+            .arg(proc.prioridad));
     }
 }
-
-void InterfazGrafica::listarProcesosVRecursos()
+//Metodo actualizado para listar procesos y recursos directamente desde tu estructura real, evitando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase Proceso tenga los getters necesarios para acceder a sus atributos de forma segura.
+void InterfazGrafica::listarProcesosYRecursos()
 {
-    m_tablaProcesos->setRowCount(m_procesos.size());
+    // 1. Obtenemos la referencia directa y segura a tu memoria
+    const auto& tabla = m_motor.obtenerPlanificador().obtenerTablaProcesos();
 
-    for (int fila = 0; fila < m_procesos.size(); ++fila)
-    {
-        const auto &proceso = m_procesos.at(fila);
-        m_tablaProcesos->setItem(fila, 0, new QTableWidgetItem(QString::number(proceso.pid)));
-        m_tablaProcesos->setItem(fila, 1, new QTableWidgetItem(proceso.nombre));
-        m_tablaProcesos->setItem(fila, 2, new QTableWidgetItem(proceso.estado));
+    // 2. Preparamos la tabla de Qt
+    m_tablaProcesos->setRowCount(tabla.size());
+    int fila = 0;
+
+    // 3. Iteramos sobre el mapa real
+    for (const auto& par : tabla) {
+        const Proceso& proceso = par.second; // par.first es el PID, par.second es el PCB
+
+        // Llenamos las celdas (usando QString::number para ints y fromStdString para std::string)
+        m_tablaProcesos->setItem(fila, 0, new QTableWidgetItem(QString::number(proceso.obtenerPid())));
+        m_tablaProcesos->setItem(fila, 1, new QTableWidgetItem(QString::fromStdString(proceso.obtenerNombre())));
+        
+        // TODO: Asegúrate de tener un getter que convierta tu enum EstadoProceso a texto
+        m_tablaProcesos->setItem(fila, 2, new QTableWidgetItem(QStringLiteral("Activo"))); 
+        
         m_tablaProcesos->setItem(fila, 3, new QTableWidgetItem(QString::number(proceso.prioridad)));
-        m_tablaProcesos->setItem(fila, 4, new QTableWidgetItem(QString::number(proceso.rafaga)));
-        m_tablaProcesos->setItem(fila, 5, new QTableWidgetItem(QString::number(proceso.memoria)));
+        m_tablaProcesos->setItem(fila, 4, new QTableWidgetItem(QString::number(proceso.obtenerRafagaRestante())));
+        
+        // TODO: Reemplaza este 0 con el getter real de la memoria del proceso si es privado
+        m_tablaProcesos->setItem(fila, 5, new QTableWidgetItem(QString::number(0))); 
+        
+        fila++;
     }
-
     m_tablaProcesos->resizeRowsToContents();
 }
 
 void InterfazGrafica::mostrarHistorialLogs()
 {
     m_historialLogs->clear();
-    for (const auto &linea : m_historial)
+
+    // Le pedimos los datos reales al sistema a través del motor.
+    auto historial = m_motor.obtenerLogs().exportarLogs();
+
+    for (const auto &linea : historial)
     {
-        m_historialLogs->append(linea);
+        // Convertimos de std::string (C++) a QString (Qt) al vuelo
+        m_historialLogs->append(QString::fromStdString(linea));
     }
 }
 
@@ -345,7 +343,9 @@ void InterfazGrafica::capturarDatosProceso()
     prioridad->setValue(3);
 
     auto *memoria = new QSpinBox(&dialog);
-    memoria->setRange(1, kMemoriaTotalMb);
+    // Cambiado: Ahora el límite superior lo dicta el Gestor de Recursos real
+    // Si aún no tienes el getter, puedes usar 4096 por ahora.
+    memoria->setRange(1, m_motor.obtenerRecursos().MAX_MEMORIA); 
     memoria->setValue(256);
 
     form->addRow(tr("Nombre"), nombre);
@@ -362,7 +362,8 @@ void InterfazGrafica::capturarDatosProceso()
 
     if (dialog.exec() != QDialog::Accepted)
     {
-        registrarEvento(tr("[Usuario] Creación de proceso cancelada."));
+        // Cambiado: Uso de statusBar para feedback inmediato de UI
+        statusBar()->showMessage(tr("Creación de proceso cancelada."), 4000);
         return;
     }
 
@@ -373,65 +374,42 @@ void InterfazGrafica::capturarDatosProceso()
         return;
     }
 
-    const int siguientePid = m_procesos.isEmpty() ? 1 : (m_procesos.constLast().pid + 1);
-    ProcesoMock nuevo{ siguientePid, nombreProceso, tr("Listo"), prioridad->value(), rafaga->value(), memoria->value() };
+    // =========================================================================
+    // INYECCIÓN DE LÓGICA REAL (ADIÓS MOCKS)
+    // =========================================================================
+    
+    // El MotorSimulacion se encarga de:
+    // 1. Pedirle al Planificador que cree el PCB.
+    // 2. Pedirle al GestorRecursos que reserve la memoria.
+    // 3. Generar el log del evento.
+    m_motor.crearProceso(
+        nombreProceso.toStdString(),
+        rafaga->value(),
+        prioridad->value(),
+        memoria->value()
+    );
 
-    m_procesos.push_back(nuevo);
-    m_colaListos.push_back(nuevo);
-    registrarEvento(tr("[Usuario] Proceso '%1' creado con PID %2.").arg(nuevo.nombre).arg(nuevo.pid));
+    // Finalmente, refrescamos todas las tablas y listas con datos del kernel
     actualizarVistas();
+    statusBar()->showMessage(tr("Proceso '%1' enviado al sistema.").arg(nombreProceso), 4000);
 }
 
 void InterfazGrafica::ejecutarAccionUsuario()
 {
-    if (m_colaListos.isEmpty())
-    {
-        registrarEvento(tr("[CPU] No hay procesos listos para ejecutar."));
-        QMessageBox::information(this, tr("Sin procesos"), tr("La cola de listos está vacía."));
-        return;
-    }
-
-    auto proceso = m_colaListos.takeFirst();
-    proceso.estado = tr("Finalizado");
-
-    for (auto &item : m_procesos)
-    {
-        if (item.pid == proceso.pid)
-        {
-            item.estado = proceso.estado;
-            break;
-        }
-    }
-
-    registrarEvento(tr("[CPU] PID %1 (%2) avanzó al siguiente paso y quedó %3.")
-                        .arg(proceso.pid)
-                        .arg(proceso.nombre)
-                        .arg(proceso.estado));
-
+    // 1. Le decimos al CPU que haga 1 tick de reloj
+    m_motor.ejecutarPasoSiguiente();
+    
+    // 2. Refrescamos la pantalla para ver qué cambió
     actualizarVistas();
 }
-
+// Fin de métodos actualizados para mostrar datos reales desde tu motor de simulación, eliminando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase MotorSimulacion tenga los métodos necesarios para acceder a los datos de forma segura y eficiente.
 void InterfazGrafica::crearProceso()
 {
     capturarDatosProceso();
 }
 
-void InterfazGrafica::registrarEvento(const QString &mensaje)
-{
-    m_historial.push_back(mensaje);
-    mostrarHistorialLogs();
-    statusBar()->showMessage(mensaje, 4000);
-}
 
-int InterfazGrafica::memoriaUsada() const
-{
-    int total = 0;
-    for (const auto &proceso : m_procesos)
-    {
-        total += proceso.memoria;
-    }
-    return qBound(0, total, kMemoriaTotalMb);
-}
+
 
 
 

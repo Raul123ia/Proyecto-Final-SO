@@ -177,12 +177,6 @@ void Planificador::ejecutarCicloCompleto() {
     ejecutarCPU();
 }
 
-
-// Getters de estado global
-uint64_t Planificador::obtenerTiempoGlobal() const { return reloj_global; }
-uint32_t Planificador::obtenerPidEnEjecucion() const { return pid_en_ejecucion; }
-
-
 void Planificador::suspender(uint32_t pid) {
    // 1. Accedemos de forma segura al PCB del proceso en nuestra tabla central
     Proceso& p_actual = tabla_procesos.at(pid);
@@ -235,4 +229,23 @@ void Planificador::reanudar(uint32_t pid) {
 
 void Planificador::finalizar(uint32_t pid, CausaTerminacion causa) {
     // Futura lógica para matar un proceso prematuramente
+}
+
+// Getters de estado general del sistema (útil para la UI)
+uint64_t Planificador::obtenerTiempoGlobal() const {
+     return reloj_global; }
+
+uint32_t Planificador::obtenerPidEnEjecucion() const { 
+    return pid_en_ejecucion; }
+
+const std::unordered_map<uint32_t, Proceso>& Planificador::obtenerTablaProcesos()
+ const 
+{
+    return tabla_procesos;
+}
+std::queue<uint32_t> Planificador::obtenerColaListos() const {
+    return cola_listos;
+}
+std::queue<uint32_t> Planificador::obtenerColaSuspendidos() const {
+    return cola_suspendidos;
 }

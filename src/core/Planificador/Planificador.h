@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include "Proceso.h"
-#include "GestorComunicacion.h" // Necesario para conocer el módulo de tu compañero
+#include "core/GestorComunicacion/GestorComunicacion.h" // Necesario para conocer el módulo de tu compañero
 
 // Enum para identificar el servicio solicitado al Kernel
 enum class TipoLlamada {
@@ -71,6 +71,10 @@ public:
     // Getters para el estado general del sistema (útil para la UI)
     uint64_t obtenerTiempoGlobal() const;
     uint32_t obtenerPidEnEjecucion() const;
+    const std::unordered_map<uint32_t, Proceso>& obtenerTablaProcesos() const;
+    std::queue<uint32_t> obtenerColaListos() const;
+    std::queue<uint32_t> obtenerColaSuspendidos() const;
+    
     bool llamadaAlSistema(TipoLlamada tipo, std::string recurso, GestorComunicacion& ipc);
 };
 
