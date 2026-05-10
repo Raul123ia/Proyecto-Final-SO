@@ -1,4 +1,4 @@
-#include "Proceso.h"
+#include "core/Planificador/Proceso.h"
 
 // Inicialización de la variable estática. El PID 0 está reservado.
 std::atomic_uint32_t Proceso::CONTADOR_PID{1};

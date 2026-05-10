@@ -92,10 +92,10 @@ const GestorLogs& MotorSimulacion::obtenerLogs() const {
     return registros;
 }
 
-uint32_t MotorSimulacion::obtenerMemoriaUsada() const 
-{
-    return recursos.obtenerMemoriaUsada();
-}
+//uint32_t MotorSimulacion::obtenerMemoriaUsada() const
+//{
+  //  return recursos.obtenerMemoriaUsada();
+//}
 
 const GestorRecursos& MotorSimulacion::obtenerRecursos() const 
 {
