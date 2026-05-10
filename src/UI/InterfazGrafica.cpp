@@ -62,8 +62,11 @@ void InterfazGrafica::construirInterfaz()
     m_btnSiguientePaso->setObjectName("btnPrincipal");
     m_btnCrearProceso = new QPushButton(tr("Crear Proceso"), this);
     m_btnCrearProceso->setObjectName("btnSecundario");
+    auto *btnAlgoritmo = new QPushButton(tr("Seleccionar Algoritmo"), this);
+    btnAlgoritmo->setObjectName("btnSecundario");
     zonaBotones->addWidget(m_btnSiguientePaso);
     zonaBotones->addWidget(m_btnCrearProceso);
+    zonaBotones->addWidget(btnAlgoritmo);
     zonaBotones->addStretch();
     raiz->addLayout(zonaBotones);
 
