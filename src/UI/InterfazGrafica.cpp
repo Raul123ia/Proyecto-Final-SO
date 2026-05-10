@@ -312,7 +312,8 @@ void InterfazGrafica::mostrarHistorialLogs()
     m_historialLogs->clear();
 
     // Le pedimos los datos reales al sistema a través del motor.
-    auto historial = m_motor.exportarLogsRAM().exportarLogsCPU();
+    // Forma correcta: Pedimos el gestor de logs, y de ahí exportamos el historial completo
+    auto historial = m_motor.obtenerLogs().exportarHistorialLogs();
 
     for (const auto &linea : historial)
     {

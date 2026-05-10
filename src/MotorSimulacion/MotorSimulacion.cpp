@@ -21,18 +21,18 @@ void MotorSimulacion::iniciar(TipoAlgoritmo algoritmo, int quantum) {
 }
  //Método terminado, solo falta implementar .anotarEvento en GestorLogs para que el log de creación de proceso quede registrado.
 void MotorSimulacion::crearProceso(std::string nombre, int rafaga, int prioridad, int memoria) {
-    // Aquí se delegaría la creación del proceso al planificador, que a su vez interactuaría con el gestor de recursos para asignar memoria, etc.
-    // uint32_t pid = planificador.crearYAsignarProceso(nombre, prioridad, rafaga, memoria);
-    // recursos.asignarMemoria(pid, memoria);
+    
     // PASO 1: Validar si el hardware tiene RAM disponible
     if (!recursos.validarDisponibilidadMemoria(memoria)) {
         // No hay memoria. El SO rechaza la creación del proceso.
-        registros.anotarEvento("[Kernel] Error: Memoria insuficiente para crear el proceso '" + nombre + "'.");
+       std::string mensajeError = "Error: No hay memoria para '" + nombre + "'.";
+        registros.anotarEvento(mensajeError);
         return; 
     }
 
     // PASO 2: Si llegamos aquí, sí hay RAM. Le decimos al Planificador que construya el PCB.
     // Asumo que tu crearYAsignarProceso devuelve el PID asignado.
+    // Aquí se delegaría la creación del proceso al planificador, que a su vez interactuaría con el gestor de recursos para asignar memoria, etc.
     uint32_t nuevoPid = planificador.crearYAsignarProceso(nombre, prioridad, rafaga, memoria);
 
     // PASO 3: Apartamos físicamente la memoria en el GestorRecursos
@@ -78,7 +78,8 @@ bool MotorSimulacion::invocarLlamadaSistema(TipoLlamada tipo, std::string recurs
     
     // Opcional: Anotar en los logs si hubo un bloqueo
     if (!resultado && tipo == TipoLlamada::WAIT_SEMAFORO) {
-        registros.anotarEvento("[IPC] Proceso bloqueado esperando el semáforo: " + recurso);
+        std::string mensaje = "[IPC] Proceso bloqueado esperando el semáforo: " + recurso;
+        registros.anotarEvento(mensaje);
     }
     
     return resultado;
@@ -91,11 +92,6 @@ uint32_t MotorSimulacion::obtenerMemoriaUsada() const {
 const GestorLogs& MotorSimulacion::obtenerLogs() const {
     return registros;
 }
-
-//uint32_t MotorSimulacion::obtenerMemoriaUsada() const
-//{
-  //  return recursos.obtenerMemoriaUsada();
-//}
 
 const GestorRecursos& MotorSimulacion::obtenerRecursos() const 
 {

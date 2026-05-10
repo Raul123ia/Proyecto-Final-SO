@@ -33,6 +33,7 @@ public:
     std::string obtenerNombre() const;
     EstadoProceso obtenerEstado() const;
     uint64_t obtenerRafagaRestante() const;
+    int obtenerPrioridad() const;
 
     // Métodos de control
     bool actualizarEstado(EstadoProceso nuevo);

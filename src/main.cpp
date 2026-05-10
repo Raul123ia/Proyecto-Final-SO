@@ -1,9 +1,9 @@
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QStyleFactory>
+#include <QApplication>
+#include <QStyleFactory>
+
+// Encabezados reales de tu arquitectura
 #include "core/MotorSimulacion/MotorSimulacion.h"
 #include "core/UI/InterfazGrafica.h"
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QStyleFactory>
 
 // =========================================================================
 // PUNTO DE ENTRADA PRINCIPAL (EL "BOOT" DE TU SISTEMA OPERATIVO)
