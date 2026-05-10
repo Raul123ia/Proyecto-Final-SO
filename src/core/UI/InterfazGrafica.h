@@ -24,7 +24,7 @@ public:
     void listarProcesosYRecursos();
     void mostrarHistorialLogs();
     void capturarDatosProceso();
-
+    
 public slots:
     void ejecutarAccionUsuario();
     void crearProceso();

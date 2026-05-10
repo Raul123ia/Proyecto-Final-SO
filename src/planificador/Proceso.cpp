@@ -1,5 +1,5 @@
-#include "Proceso.h"
-
+#include "core/Planificador/Proceso.h"
+#include "core/Planificador/Planificador.h"
 // Inicialización de la variable estática. El PID 0 está reservado.
 std::atomic_uint32_t Proceso::CONTADOR_PID{1};
 
@@ -34,4 +34,8 @@ void Proceso::ejecutarUnTick() {
     if (rafaga_restante > 0) {
         rafaga_restante--;
     }
+}
+
+int Proceso::obtenerPrioridad() const {
+    return prioridad;
 }

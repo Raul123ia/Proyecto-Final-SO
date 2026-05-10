@@ -1,5 +1,5 @@
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QStyleFactory>
+#include <QApplication>
+#include <QStyleFactory>
 
 // Encabezados reales de tu arquitectura
 #include "core/MotorSimulacion/MotorSimulacion.h"

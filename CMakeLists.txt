@@ -13,8 +13,9 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+set(CMAKE_PREFIX_PATH "C:/Qt/Qt/6.11.0/mingw_64" ${CMAKE_PREFIX_PATH})
 # 3. Buscar módulos de Qt (De forma silenciosa para que no te dé error a ti)
-find_package(Qt6 COMPONENTS Widgets QUIET)
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 # 4. Homologación de Fuentes (Tu estrategia de Integrador)
 # Buscamos automáticamente todos los archivos en src para no listarlos uno por uno

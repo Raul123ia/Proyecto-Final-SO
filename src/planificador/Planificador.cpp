@@ -251,7 +251,3 @@ std::queue<uint32_t> Planificador::obtenerColaListos() const {
 std::queue<uint32_t> Planificador::obtenerColaSuspendidos() const {
     return cola_suspendidos;
 }
-
-int Proceso::obtenerPrioridad() const {
-    return prioridad;
-}

@@ -16,8 +16,9 @@ public:
     GestorLogs();
 
     // ================= UTILIDAD =================
-    static void anotarEvento(std::vector<std::string>& contenedor, const std::string& mensaje);
-
+    void anotarEvento(const std::string& mensaje);
+    // Si quieres mantener la función con contenedor, puedes dejarla como sobrecarga:
+    // void anotarEvento(std::vector<std::string>& contenedor, const std::string& mensaje);
     // ================= HISTORIAL =================
     std::vector<std::string> exportarHistorialLogs() const;
 
