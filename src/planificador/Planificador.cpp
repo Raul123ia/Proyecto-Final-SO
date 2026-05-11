@@ -97,6 +97,7 @@ void Planificador::ejecutarDespachador() {
                 pid_en_ejecucion = cola_listos.front();
                 cola_listos.pop();
                 tabla_procesos.at(pid_en_ejecucion).actualizarEstado(EstadoProceso::EJECUTANDO);
+                //Aqui se debe validar sl tiempo de rafaga es igual a 0, se debe liberar la memoria y marcar el proceso como terminado, para luego pasar al siguiente proceso de la cola de listos
             }
             break;
 
@@ -156,7 +157,7 @@ void Planificador::ejecutarCPU() {
         Proceso& proceso_actual = tabla_procesos.at(pid_en_ejecucion);
         
         // AQUÍ es donde se resta el tiempo de ráfaga 
-        proceso_actual.ejecutarUnTick(); 
+        proceso_actual.ejecutarUnTick();
 
         /*El hardware avisa que se consumió un tick del quantum
          (Solo relevante para Round Robin)
@@ -250,4 +251,7 @@ std::queue<uint32_t> Planificador::obtenerColaListos() const {
 }
 std::queue<uint32_t> Planificador::obtenerColaSuspendidos() const {
     return cola_suspendidos;
+}
+void Planificador::actualizarContadorPrograma(uint32_t pid, int nuevo_contador_programa) {
+   tabla_procesos.at(pid).establecerContadorPrograma(nuevo_contador_programa);
 }

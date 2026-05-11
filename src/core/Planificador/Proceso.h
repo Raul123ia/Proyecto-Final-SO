@@ -23,6 +23,7 @@ private:
     uint64_t rafaga_restante;
     uint32_t memoria_asignada;
     std::vector<std::string> recursos_fisicos;
+    int contador_programa;
 
 public:
     // Constructor
@@ -34,7 +35,8 @@ public:
     EstadoProceso obtenerEstado() const;
     uint64_t obtenerRafagaRestante() const;
     int obtenerPrioridad() const;
-
+    int obtenerContadorPrograma() const;
+    void establecerContadorPrograma(int cp);
     // Métodos de control
     bool actualizarEstado(EstadoProceso nuevo);
     void vincularRecurso(std::string nombre);

@@ -68,6 +68,7 @@ public:
     void reanudar(uint32_t pid);
     void finalizar(uint32_t pid, CausaTerminacion causa);
     void ejecutarDespachador();
+    void actualizarContadorPrograma(uint32_t pid, int nuevo_contador_programa);
     // Getters para el estado general del sistema (útil para la UI)
     uint64_t obtenerTiempoGlobal() const;
     uint32_t obtenerPidEnEjecucion() const;

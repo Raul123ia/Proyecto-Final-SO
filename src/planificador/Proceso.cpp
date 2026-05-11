@@ -6,7 +6,8 @@ std::atomic_uint32_t Proceso::CONTADOR_PID{1};
 // Constructor usando listas de inicialización 
 Proceso::Proceso(std::string _nombre, int _prioridad, uint64_t _rafaga, uint32_t _memoria)
     : pid(CONTADOR_PID++), nombre(_nombre), estado(EstadoProceso::LISTO), 
-      prioridad(_prioridad), rafaga_restante(_rafaga), memoria_asignada(_memoria) {
+      prioridad(_prioridad), rafaga_restante(_rafaga), memoria_asignada(_memoria),
+        contador_programa(0) {
 }
 
 // Getters
@@ -38,4 +39,12 @@ void Proceso::ejecutarUnTick() {
 
 int Proceso::obtenerPrioridad() const {
     return prioridad;
+}
+
+int Proceso::obtenerContadorPrograma() const {
+    return contador_programa;
+}
+
+void Proceso::establecerContadorPrograma(int cp) {
+    contador_programa = cp;
 }

@@ -1,65 +1,85 @@
+// Refactorización de las funciones globales
+#include "core/Planificador/Planificador.h"
 #include "core/ProductorConsumidor/ProductorConsumidor.h"
 #include <iostream>
 
-// Función para simular que un proceso actuando como productor intenta depositar un item en el buffer
-void SimulacionIPC::simularProductor(GestorComunicacion& ipc, uint32_t pid, int item) {
-    // Registramos que este productor va a intentar algo
-    std::cout << "\n[Productor PID:" << pid << "] Intentando producir item " << item << "...\n";
-    
-    // Primer WAIT: Verificamos si aún hay huecos vacíos en el buffer
-    if (ipc.esperarSemaforo("Espacios_Vacios", pid)) {
-        // Segundo WAIT: Asegurar la entrada a la sección crítica exclusión mutua
-        if (ipc.esperarSemaforo("Mutex", pid)) {
+void ProductorConsumidor::simularProductor(Planificador& Planificador, GestorComunicacion& ipc, uint32_t pid, int item) {
+    // 1. Obtenemos el PCB actual (solo lectura, es lo seguro)
+    const Proceso& p = Planificador.obtenerDetallesProceso(pid);
+    int cp = p.obtenerContadorPrograma();
+
+    // 2. Máquina de estados usando el PC
+    switch(cp) {
+        case 0:
+            std::cout << "\n[Productor PID:" << pid << "] Intentando producir item " << item << "...\n";
             
-            // Hemos logrado entrar! Añadimos el item generado hacia el final de nuestra cola/buffer simulado
-            buffer_compartido.push(item); 
-            // Mensaje de éxito informando que se introdujo
+            // SYSTEM CALL: WAIT (Espacios Vacíos)
+            if (!Planificador.llamadaAlSistema(TipoLlamada::WAIT_SEMAFORO, "Espacios_Vacios", ipc)) {
+                std::cout << "[Productor PID:" << pid << "] SysCall Bloqueante: Buffer lleno.\n";
+                return; // El proceso fue suspendido por el Kernel. Salimos.
+            }
+            // Éxito. Avanzamos el PC.
+            Planificador.actualizarContadorPrograma(pid, 1);
+            // No hay break, queremos que siga ejecutando (fallthrough)
+
+        case 1:
+            // SYSTEM CALL: WAIT (Mutex)
+            if (!Planificador.llamadaAlSistema(TipoLlamada::WAIT_SEMAFORO, "Mutex", ipc)) {
+                std::cout << "[Productor PID:" << pid << "] SysCall Bloqueante: Mutex ocupado.\n";
+                return; // Suspendido.
+            }
+            Planificador.actualizarContadorPrograma(pid, 2);
+
+        case 2:
+            // --- SECCIÓN CRÍTICA ---
+            buffer_compartido.push(item); // Descomenta esto cuando tengas tu cola
             std::cout << "[Productor PID:" << pid << "] Produjo el item " << item << " exitosamente.\n";
             
-            // IMPORTANTE: el orden aquí evita deadlocks. Liberamos Mutex con SIGNAL.
-            ipc.liberarSemaforo("Mutex");
+            // SYSTEM CALLS: SIGNALS
+            Planificador.llamadaAlSistema(TipoLlamada::SIGNAL_SEMAFORO, "Mutex", ipc);
+            Planificador.llamadaAlSistema(TipoLlamada::SIGNAL_SEMAFORO, "Items_Disponibles", ipc);
             
-            // Finalmente damos SIGNAL al semáforo protector de número de items, avisando que existe 1 item más para consumir
-            ipc.liberarSemaforo("Items_Disponibles");
-            
-        } else {
-            // El proceso quedó bloqueado porque perdió Mutex a manos de otro ente después de comprobar que había vacío
-            std::cout << "[Productor PID:" << pid << "] Bloqueado al momento de adquirir Mutex.\n";
-        }
-    } else {
-        // El proceso quedó bloqueado por tratar de producir cuando el buffer está en su máxima capacidad y el contador dio 0
-        std::cout << "[Productor PID:" << pid << "] Bloqueado: Buffer lleno.\n";
+            // Tarea finalizada. Reseteamos el PC por si este Productor vuelve a ser llamado.
+            Planificador.actualizarContadorPrograma(pid, 0);
+            break;
     }
 }
 
-// Función que simula al consumidor, este se encarga de retirar tareas del buffer compartido
-void SimulacionIPC::simularConsumidor(GestorComunicacion& ipc, uint32_t pid) {
-    // Registramos inicio de la acción consumidora
-    std::cout << "\n[Consumidor PID:" << pid << "] Intentando consumir un item...\n";
-    
-    // Primer WAIT: Chequeamos que existan datos listos para sacar de la cola
-    if (ipc.esperarSemaforo("Items_Disponibles", pid)) {
-        // Segundo WAIT: Pedir la perilla universal Mutex para poder tocar la colección sin chocar
-        if (ipc.esperarSemaforo("Mutex", pid)) {
+void ProductorConsumidor::simularConsumidor(Planificador& Planificador, GestorComunicacion& ipc, uint32_t pid) {
+    const Proceso& p = Planificador.obtenerDetallesProceso(pid);
+    int cp = p.obtenerContadorPrograma();
+
+    switch(cp) {
+        case 0:
+            std::cout << "\n[Consumidor PID:" << pid << "] Intentando consumir un item...\n";
             
-            // Copiamos el dato situado enfrente de nuestra cola y sacamos una copia al exterior. 
+            // SYSTEM CALL: WAIT (Items Disponibles)
+            if (!Planificador.llamadaAlSistema(TipoLlamada::WAIT_SEMAFORO, "Items_Disponibles", ipc)) {
+                std::cout << "[Consumidor PID:" << pid << "] SysCall Bloqueante: Buffer vacio.\n";
+                return; 
+            }
+            Planificador.actualizarContadorPrograma(pid, 1);
+
+        case 1:
+            // SYSTEM CALL: WAIT (Mutex)
+            if (!Planificador.llamadaAlSistema(TipoLlamada::WAIT_SEMAFORO, "Mutex", ipc)) {
+                std::cout << "[Consumidor PID:" << pid << "] SysCall Bloqueante: Mutex ocupado.\n";
+                return; 
+            }
+            Planificador.actualizarContadorPrograma(pid, 2);
+
+        case 2:
+            // --- SECCIÓN CRÍTICA ---
             int item_consumido = buffer_compartido.front();
-            buffer_compartido.pop(); // Destruimos el mismo del buffer compartido
-            // Notificamos satisfactoriamente la obtención de datos
+            buffer_compartido.pop();
             std::cout << "[Consumidor PID:" << pid << "] Consumio el item " << item_consumido << ".\n";
             
-            // Restituimos la variable exclusión mutua vía función SIGNAL para que un productor regrese
-            ipc.liberarSemaforo("Mutex");
             
-            // Se le suma 1 al semáforo de agujeros (SIGNAL) notificando que existe una posición de buffer libre más
-            ipc.liberarSemaforo("Espacios_Vacios");
+            // SYSTEM CALLS: SIGNALS
+            Planificador.llamadaAlSistema(TipoLlamada::SIGNAL_SEMAFORO, "Mutex", ipc);
+            Planificador.llamadaAlSistema(TipoLlamada::SIGNAL_SEMAFORO, "Espacios_Vacios", ipc);
             
-        } else {
-             // El flujo detectó Mutex en 0 y se metió al queue sin obtener acceso al código seguro
-            std::cout << "[Consumidor PID:" << pid << "] Bloqueado al momento de adquirir Mutex.\n";
-        }
-    } else {
-        // El flujo frenó su paso dado que el contador indicó que hay un total de 0 productos actualmente 
-        std::cout << "[Consumidor PID:" << pid << "] Bloqueado: Buffer vacio.\n";
+            Planificador.actualizarContadorPrograma(pid, 0);
+            break;
     }
 }
