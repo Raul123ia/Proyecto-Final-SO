@@ -55,16 +55,24 @@ void InterfazGrafica::construirInterfaz()
     m_barraMemoria->setMinimumWidth(280);
     encabezado->addWidget(m_barraMemoria);
 
+    m_labelBuffer = new QLabel(this);
+    m_labelBuffer->setObjectName("subtituloPrincipal");
+    m_labelBuffer->setText(tr("Buffer: 0/0"));
+    encabezado->addWidget(m_labelBuffer);
+
     raiz->addLayout(encabezado);
 
     auto *zonaBotones = new QHBoxLayout();
     m_btnSiguientePaso = new QPushButton(tr("Siguiente Paso"), this);
     m_btnSiguientePaso->setObjectName("btnPrincipal");
+    m_btnIniciarSimulacion = new QPushButton(tr("Iniciar Simulacion"), this);
+    m_btnIniciarSimulacion->setObjectName("btnSecundario");
     m_btnCrearProceso = new QPushButton(tr("Crear Proceso"), this);
     m_btnCrearProceso->setObjectName("btnSecundario");
     auto *btnAlgoritmo = new QPushButton(tr("Seleccionar Algoritmo"), this);
     btnAlgoritmo->setObjectName("btnSecundario");
     zonaBotones->addWidget(m_btnSiguientePaso);
+    zonaBotones->addWidget(m_btnIniciarSimulacion);
     zonaBotones->addWidget(m_btnCrearProceso);
     zonaBotones->addWidget(btnAlgoritmo);
     zonaBotones->addStretch();
@@ -146,6 +154,7 @@ void InterfazGrafica::conectarSenales()
 {
     connect(m_btnSiguientePaso, &QPushButton::clicked, this, &InterfazGrafica::ejecutarAccionUsuario);
     connect(m_btnCrearProceso, &QPushButton::clicked, this, &InterfazGrafica::crearProceso);
+    connect(m_btnIniciarSimulacion, &QPushButton::clicked, this, &InterfazGrafica::iniciarSimulacionProductorConsumidor);
 }
 
 void InterfazGrafica::aplicarEstilo()
@@ -239,6 +248,10 @@ void InterfazGrafica::actualizarVistas()
     
     m_barraMemoria->setValue(usados);
     m_barraMemoria->setFormat(tr("%v MB / %m MB usados"));
+
+    const size_t ocupacion = m_motor.obtenerOcupacionBuffer();
+    const size_t capacidad = m_motor.obtenerCapacidadBuffer();
+    m_labelBuffer->setText(tr("Buffer: %1/%2").arg(ocupacion).arg(capacidad));
 }
 
 //Metodo actualizado para mostrar las colas de planificación directamente desde tu estructura real, evitando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase Planificador tenga los métodos necesarios para obtener las colas de forma segura.
@@ -409,6 +422,64 @@ void InterfazGrafica::ejecutarAccionUsuario()
 void InterfazGrafica::crearProceso()
 {
     capturarDatosProceso();
+}
+
+void InterfazGrafica::iniciarSimulacionProductorConsumidor()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Iniciar simulacion Productor-Consumidor"));
+    dialog.setModal(true);
+
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *form = new QFormLayout();
+
+    auto *rafaga = new QSpinBox(&dialog);
+    rafaga->setRange(1, 100000);
+    rafaga->setValue(10);
+
+    auto *prioridad = new QSpinBox(&dialog);
+    prioridad->setRange(0, 9);
+    prioridad->setValue(3);
+
+    auto *memoria = new QSpinBox(&dialog);
+    memoria->setRange(1, m_motor.obtenerRecursos().obtenerMemoriaMaxima());
+    memoria->setValue(64);
+
+    auto *ticks = new QSpinBox(&dialog);
+    ticks->setRange(0, 1000);
+    ticks->setValue(0);
+
+    form->addRow(tr("Rafaga"), rafaga);
+    form->addRow(tr("Prioridad"), prioridad);
+    form->addRow(tr("Memoria (MB)"), memoria);
+    form->addRow(tr("Ticks iniciales"), ticks);
+    layout->addLayout(form);
+
+    auto *botones = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout->addWidget(botones);
+
+    connect(botones, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(botones, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted) {
+        statusBar()->showMessage(tr("Inicio de simulacion cancelado."), 4000);
+        return;
+    }
+
+    m_motor.iniciarSimulacionProductorConsumidor(
+        rafaga->value(),
+        prioridad->value(),
+        memoria->value()
+    );
+
+    const int ticksIniciales = ticks->value();
+    for (int i = 0; i < ticksIniciales; ++i) {
+        m_motor.ejecutarPasoSiguiente();
+    }
+
+    m_btnIniciarSimulacion->setEnabled(false);
+    actualizarVistas();
+    statusBar()->showMessage(tr("Simulacion Productor-Consumidor inicializada."), 4000);
 }
 
 

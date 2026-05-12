@@ -13,6 +13,12 @@ enum class EstadoProceso {
     TERMINADO
 };
 
+enum class TipoProceso {
+    NORMAL,
+    PRODUCTOR,
+    CONSUMIDOR
+};
+
 class Proceso {
 private:
     static std::atomic_uint32_t CONTADOR_PID; 
@@ -24,10 +30,11 @@ private:
     uint32_t memoria_asignada;
     std::vector<std::string> recursos_fisicos;
     int contador_programa;
+    TipoProceso tipo_proceso;
 
 public:
     // Constructor
-    Proceso(std::string _nombre, int _prioridad, uint64_t _rafaga, uint32_t _memoria);
+    Proceso(std::string _nombre, int _prioridad, uint64_t _rafaga, uint32_t _memoria, TipoProceso _tipo = TipoProceso::NORMAL);
 
     // Getters esenciales para la UI y el Planificador
     uint32_t obtenerPid() const;
@@ -36,6 +43,7 @@ public:
     uint64_t obtenerRafagaRestante() const;
     int obtenerPrioridad() const;
     int obtenerContadorPrograma() const;
+    TipoProceso obtenerTipoProceso() const;
     void establecerContadorPrograma(int cp);
     // Métodos de control
     bool actualizarEstado(EstadoProceso nuevo);

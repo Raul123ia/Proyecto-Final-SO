@@ -10,6 +10,7 @@ class QProgressBar;
 class QTableWidget;
 class QTextEdit;
 class QPushButton;
+class QLabel;
 
 class InterfazGrafica final : public QMainWindow
 {
@@ -28,6 +29,7 @@ public:
 public slots:
     void ejecutarAccionUsuario();
     void crearProceso();
+    void iniciarSimulacionProductorConsumidor();
 
 private:
     MotorSimulacion& m_motor;
@@ -48,5 +50,7 @@ private:
     QProgressBar *m_barraMemoria{};
     QPushButton *m_btnSiguientePaso{};
     QPushButton *m_btnCrearProceso{};
+    QPushButton *m_btnIniciarSimulacion{};
+    QLabel *m_labelBuffer{};
 };
 

@@ -15,6 +15,7 @@ public:
     void simularProductor(Planificador& Planificador, GestorComunicacion& ipc, uint32_t pid, int item);
     void simularConsumidor(Planificador& Planificador, GestorComunicacion& ipc, uint32_t pid);
     size_t obtenerTamanioBuffer() const { return buffer_compartido.size(); }
+    size_t obtenerCapacidadMaxima() const { return CAPACIDAD_MAXIMA; }
 };
 
 #endif // PRODUCTOR_CONSUMIDOR_HPP

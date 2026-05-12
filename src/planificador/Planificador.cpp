@@ -18,9 +18,9 @@ const Proceso& Planificador::obtenerDetallesProceso(uint32_t pid) const {
 }
 
 // Creación y registro de procesos
-uint32_t Planificador::crearYAsignarProceso(std::string nombre, int prioridad, uint64_t rafaga, uint32_t memoria) {
+uint32_t Planificador::crearYAsignarProceso(std::string nombre, int prioridad, uint64_t rafaga, uint32_t memoria, TipoProceso tipo) {
     // 1. Instanciamos el proceso
-    Proceso nuevo_proceso(nombre, prioridad, rafaga, memoria);
+    Proceso nuevo_proceso(nombre, prioridad, rafaga, memoria, tipo);
     uint32_t nuevo_pid = nuevo_proceso.obtenerPid();
     
     // 2. Lo guardamos en el mapa. Usamos emplace porque es más eficiente que insert.

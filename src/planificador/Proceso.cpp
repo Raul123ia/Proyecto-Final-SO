@@ -4,10 +4,10 @@
 std::atomic_uint32_t Proceso::CONTADOR_PID{1};
 
 // Constructor usando listas de inicialización 
-Proceso::Proceso(std::string _nombre, int _prioridad, uint64_t _rafaga, uint32_t _memoria)
+Proceso::Proceso(std::string _nombre, int _prioridad, uint64_t _rafaga, uint32_t _memoria, TipoProceso _tipo)
     : pid(CONTADOR_PID++), nombre(_nombre), estado(EstadoProceso::LISTO), 
       prioridad(_prioridad), rafaga_restante(_rafaga), memoria_asignada(_memoria),
-        contador_programa(0) {
+    contador_programa(0), tipo_proceso(_tipo) {
 }
 
 // Getters
@@ -43,6 +43,10 @@ int Proceso::obtenerPrioridad() const {
 
 int Proceso::obtenerContadorPrograma() const {
     return contador_programa;
+}
+
+TipoProceso Proceso::obtenerTipoProceso() const {
+    return tipo_proceso;
 }
 
 void Proceso::establecerContadorPrograma(int cp) {
