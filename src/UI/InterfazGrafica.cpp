@@ -1,5 +1,5 @@
 #include "../core/UI/InterfazGrafica.h"
-
+#include "core/Planificador/Planificador.h"
 #include <QAbstractItemView>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -8,12 +8,14 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QListWidget>
+#include <QButtonGroup>
 #include <QMessageBox>
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QStatusBar>
 #include <QSpinBox>
+#include <QRadioButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTextEdit>
@@ -64,8 +66,68 @@ void InterfazGrafica::construirInterfaz()
     m_btnCrearProceso->setObjectName("btnSecundario");
     auto *btnAlgoritmo = new QPushButton(tr("Seleccionar Algoritmo"), this);
     btnAlgoritmo->setObjectName("btnSecundario");
+    connect(btnAlgoritmo, &QPushButton::clicked, this, [this, btnAlgoritmo]() {
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Seleccionar algoritmo de planificación"));
+        dialog.setModal(true);
+
+        auto *layout = new QVBoxLayout(&dialog);
+        auto *descripcion = new QLabel(tr("Elige el algoritmo que se mostrará en la interfaz."), &dialog);
+        descripcion->setWordWrap(true);
+        layout->addWidget(descripcion);
+
+        auto *grupo = new QButtonGroup(&dialog);
+        auto *opFcfs = new QRadioButton(tr("FCFS / FIFO"), &dialog);
+        auto *opSjf = new QRadioButton(tr("SJF"), &dialog);
+        auto *opPrioridad = new QRadioButton(tr("Prioridad"), &dialog);
+        auto *opRR = new QRadioButton(tr("Round Robin"), &dialog);
+
+        grupo->addButton(opFcfs, 0);
+        grupo->addButton(opSjf, 1);
+        grupo->addButton(opPrioridad, 2);
+        grupo->addButton(opRR, 3);
+
+        opFcfs->setChecked(true);
+
+        layout->addWidget(opFcfs);
+        layout->addWidget(opSjf);
+        layout->addWidget(opPrioridad);
+        layout->addWidget(opRR);
+
+        auto *botones = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+        layout->addWidget(botones);
+
+        connect(botones, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        connect(botones, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+        if (dialog.exec() == QDialog::Accepted) {
+            QString algoritmoSeleccionado = tr("FCFS / FIFO");
+            if (opSjf->isChecked()) {
+                algoritmoSeleccionado = tr("SJF");
+            } else if (opPrioridad->isChecked()) {
+                algoritmoSeleccionado = tr("Prioridad");
+            } else if (opRR->isChecked()) {
+                algoritmoSeleccionado = tr("Round Robin");
+            }
+
+            btnAlgoritmo->setText(tr("Algoritmo: %1").arg(algoritmoSeleccionado));
+            statusBar()->showMessage(tr("Algoritmo seleccionado: %1").arg(algoritmoSeleccionado), 4000);
+        }
+    });
     zonaBotones->addWidget(m_btnSiguientePaso);
     zonaBotones->addWidget(m_btnCrearProceso);
+    m_btnSimularProductor = new QPushButton(tr("Simular Productor"), this);
+    m_btnSimularProductor->setObjectName("btnSecundario");
+    m_btnSimularConsumidor = new QPushButton(tr("Simular Consumidor"), this);
+    m_btnSimularConsumidor->setObjectName("btnSecundario");
+    m_btnEsperarSemaforo = new QPushButton(tr("Esperar Semáforo"), this);
+    m_btnEsperarSemaforo->setObjectName("btnSecundario");
+    m_btnLiberarSemaforo = new QPushButton(tr("Liberar Semáforo"), this);
+    m_btnLiberarSemaforo->setObjectName("btnSecundario");
+    zonaBotones->addWidget(m_btnSimularProductor);
+    zonaBotones->addWidget(m_btnSimularConsumidor);
+    zonaBotones->addWidget(m_btnEsperarSemaforo);
+    zonaBotones->addWidget(m_btnLiberarSemaforo);
     zonaBotones->addWidget(btnAlgoritmo);
     zonaBotones->addStretch();
     raiz->addLayout(zonaBotones);
@@ -120,7 +182,7 @@ void InterfazGrafica::construirInterfaz()
     auto *panelLogs = new QWidget(this);
     panelLogs->setObjectName("panelTarjeta");
     auto *layoutLogs = new QVBoxLayout(panelLogs);
-    auto *lblLogs = new QLabel(tr("Historial de Eventos"), panelLogs);
+    auto *lblLogs = new QLabel(tr("Historial de Eventos y Logs"), panelLogs);
     lblLogs->setObjectName("tituloPanel");
     layoutLogs->addWidget(lblLogs);
     m_historialLogs = new QTextEdit(panelLogs);
@@ -146,6 +208,10 @@ void InterfazGrafica::conectarSenales()
 {
     connect(m_btnSiguientePaso, &QPushButton::clicked, this, &InterfazGrafica::ejecutarAccionUsuario);
     connect(m_btnCrearProceso, &QPushButton::clicked, this, &InterfazGrafica::crearProceso);
+    connect(m_btnSimularProductor, &QPushButton::clicked, this, &InterfazGrafica::simularProductor);
+    connect(m_btnSimularConsumidor, &QPushButton::clicked, this, &InterfazGrafica::simularConsumidor);
+    connect(m_btnEsperarSemaforo, &QPushButton::clicked, this, &InterfazGrafica::esperarSemaforo);
+    connect(m_btnLiberarSemaforo, &QPushButton::clicked, this, &InterfazGrafica::liberarSemaforo);
 }
 
 void InterfazGrafica::aplicarEstilo()
@@ -303,8 +369,8 @@ void InterfazGrafica::listarProcesosYRecursos()
         m_tablaProcesos->setItem(fila, 4, new QTableWidgetItem(QString::number(proceso.obtenerRafagaRestante())));
         
         // TODO: Reemplaza este 0 con el getter real de la memoria del proceso si es privado
-        m_tablaProcesos->setItem(fila, 5, new QTableWidgetItem(QString::number(0))); 
-        
+        m_tablaProcesos->setItem(fila, 5, new QTableWidgetItem(QString::number(proceso.obtenerMemoriaAsignada())));
+
         fila++;
     }
     m_tablaProcesos->resizeRowsToContents();
@@ -411,12 +477,23 @@ void InterfazGrafica::crearProceso()
     capturarDatosProceso();
 }
 
+void InterfazGrafica::simularProductor()
+{
+    statusBar()->showMessage(tr("Acción: Simular Productor (solo botón UI)"), 3000);
+}
 
+void InterfazGrafica::simularConsumidor()
+{
+    statusBar()->showMessage(tr("Acción: Simular Consumidor (solo botón UI)"), 3000);
+}
 
+void InterfazGrafica::esperarSemaforo()
+{
+    statusBar()->showMessage(tr("Acción: Esperar Semáforo (solo botón UI)"), 3000);
+}
 
-
-
-
-
-
+void InterfazGrafica::liberarSemaforo()
+{
+    statusBar()->showMessage(tr("Acción: Liberar Semáforo (solo botón UI)"), 3000);
+}
 

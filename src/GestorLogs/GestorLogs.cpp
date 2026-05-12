@@ -1,12 +1,12 @@
 #include "../core/GestorLogs/GestorLogs.h"
 
-// Constructor
+// ================= CONSTRUCTOR =================
 GestorLogs::GestorLogs() {
 }
 
 // ================= UTILIDAD =================
-void GestorLogs::anotarEvento (const std::string& mensaje) {
-    historialLogs.push_back(mensaje); // Usa el atributo privado directamente
+void GestorLogs::anotarEvento(const std::string& mensaje) {
+    historialLogs.push_back(mensaje);
     std::cout << mensaje << std::endl;
 }
 
@@ -17,60 +17,50 @@ std::vector<std::string> GestorLogs::exportarHistorialLogs() const {
 
 // ================= RAM =================
 void GestorLogs::logValidarDisponibilidadMemoria(uint32_t mb) {
-    std::string msg = "Validando " + std::to_string(mb) + " MB de RAM";
-    logsRAM.push_back(msg);
-    anotarEvento(msg);
-}
-void GestorLogs::logReservarMemoria(uint32_t pid, uint32_t mb) {
-    std::string msg = "PID " + std::to_string(pid) + " reserva " + std::to_string(mb) + " MB";
-    logsRAM.push_back(msg);
-    anotarEvento(msg);
+    std::string mensaje ="Validando " + std::to_string(mb) + " MB de RAM";
+    logsRAM.push_back(mensaje);
+    anotarEvento(mensaje);
 }
 
 void GestorLogs::logAsignarMemoria(uint32_t pid, uint32_t mb) {
-    std::string msg = "PID " + std::to_string(pid) + " asigna " + std::to_string(mb) + " MB";
-    logsRAM.push_back(msg);
-    anotarEvento(msg);
+    std::string mensaje ="PID " + std::to_string(pid) +" asigna " + std::to_string(mb) + " MB";
+    logsRAM.push_back(mensaje);
+    anotarEvento(mensaje);
 }
 
 void GestorLogs::logLiberarMemoria(uint32_t pid, uint32_t mb) {
-    std::string msg = "PID " + std::to_string(pid) + " libera " + std::to_string(mb) + " MB";
-    logsRAM.push_back(msg);
-    anotarEvento(msg);
+    std::string mensaje ="PID " + std::to_string(pid) +" libera " + std::to_string(mb) + " MB";
+    logsRAM.push_back(mensaje);
+    anotarEvento(mensaje);
 }
 
-void GestorLogs::logFinalizarMemoria(uint32_t pid) {
-    std::string msg = "PID " + std::to_string(pid) + " finaliza memoria";
-    logsRAM.push_back(msg);
-    anotarEvento(msg);
+void GestorLogs::logInsuficienteMemoria(uint32_t requerido, uint32_t disponible) {
+    std::string mensaje = "Memoria insuficiente: se requieren "
+        + std::to_string(requerido)
+        + " MB pero solo hay disponibles "
+        + std::to_string(disponible)
+        + " MB";
+    logsRAM.push_back(mensaje);
+    anotarEvento(mensaje);
 }
+
 std::vector<std::string> GestorLogs::exportarLogsRAM() {
-    historialLogs.insert(historialLogs.end(), logsRAM.begin(), logsRAM.end());
     return logsRAM;
 }
 
 // ================= CPU =================
-
 void GestorLogs::logAsignarCPU(uint32_t pid) {
-    std::string msg = "CPU asignada al PID " + std::to_string(pid);
-    logsCPU.push_back(msg);
-    anotarEvento(msg);
+    std::string mensaje ="CPU asignada al PID " + std::to_string(pid);
+    logsCPU.push_back(mensaje);
+    anotarEvento(mensaje);
 }
 
 void GestorLogs::logLiberarCPU() {
-    std::string msg = "CPU liberada";
-    logsCPU.push_back(msg);
-    anotarEvento(msg);
+    std::string mensaje = "CPU liberada";
+    logsCPU.push_back(mensaje);
+    anotarEvento(mensaje);
 }
-
-void GestorLogs::logFinalizarCPU(uint32_t pid) {
-    std::string msg = "CPU finalizada por PID " + std::to_string(pid);
-    logsCPU.push_back(msg);
-    anotarEvento(msg);
-}
-
 
 std::vector<std::string> GestorLogs::exportarLogsCPU() {
-    historialLogs.insert(historialLogs.end(), logsCPU.begin(), logsCPU.end());
     return logsCPU;
 }

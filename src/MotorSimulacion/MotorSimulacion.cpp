@@ -1,13 +1,14 @@
 #include "core/MotorSimulacion/MotorSimulacion.h"
 
 // Inclusiones de módulos homologados
-#include "core/Planificador/Planificador.h"
+
 #include "core/GestorComunicacion/GestorComunicacion.h"
 #include "core/GestorRecursos/GestorRecursos.h" 
 #include "core/GestorLogs/GestorLogs.h"
 #include "core/CausaTerminacion/CausaTerminacion.h"
+#include "core/ProductorConsumidor/ProductorConsumidor.h"
 
-MotorSimulacion::MotorSimulacion() 
+MotorSimulacion::MotorSimulacion()
     : planificador(TipoAlgoritmo::FCFS), // Inicializamos el kernel con FCFS por defecto
       recursos(&registros)               // ¡CONEXIÓN CLAVE!: Pasamos la dirección de los logs al hardware
 {
@@ -19,27 +20,66 @@ void MotorSimulacion::iniciar(TipoAlgoritmo algoritmo, int quantum) {
     // Configura el planificador inicial
     // planificador = Planificador(algoritmo, quantum);
 }
+// ================= RAM =================
+bool MotorSimulacion::validarMemoriaProceso(uint32_t memoria) const {
+    return recursos.validarDisponibilidadMemoria(memoria);
+}
+
+bool MotorSimulacion::asignarMemoriaProceso(uint32_t pid,uint32_t memoria) {
+    return recursos.asignarMemoria(pid, memoria);
+}
+
+uint32_t MotorSimulacion::liberarMemoriaProceso(uint32_t pid) {
+    return recursos.liberarMemoria(pid);
+}
+// ================= CPU =================
+bool MotorSimulacion::asignarCPUProceso(uint32_t pid) {
+    return recursos.asignarCPU(pid);
+}
+
+void MotorSimulacion::liberarCPUProceso(uint32_t pid) {
+    recursos.liberarCPU(pid);
+}
+void MotorSimulacion::simularProductor(uint32_t pid, int item) {
+    simulacionIPC.simularProductor(comunicacion, pid, item);
+}
+
+void MotorSimulacion::simularConsumidor(uint32_t pid) {
+    simulacionIPC.simularConsumidor(comunicacion, pid);
+}
  //Método terminado, solo falta implementar .anotarEvento en GestorLogs para que el log de creación de proceso quede registrado.
-void MotorSimulacion::crearProceso(std::string nombre, int rafaga, int prioridad, int memoria) {
-    
-    // PASO 1: Validar si el hardware tiene RAM disponible
-    if (!recursos.validarDisponibilidadMemoria(memoria)) {
-        // No hay memoria. El SO rechaza la creación del proceso.
-       std::string mensajeError = "Error: No hay memoria para '" + nombre + "'.";
-        registros.anotarEvento(mensajeError);
-        return; 
+// ================= CREACIÓN DE PROCESO MEMORIA=================
+bool MotorSimulacion::crearProceso(std::string nombre,int rafaga,int prioridad,int memoria) {
+
+    uint32_t memReq = static_cast<uint32_t>(memoria);
+
+    // Validar primero sin disparar el log duplicado de GestorRecursos
+    const uint32_t memoriaDisponible = recursos.obtenerMemoriaMaxima() - recursos.obtenerMemoriaUsada();
+    if (memReq > memoriaDisponible) {
+        registros.logInsuficienteMemoria(memReq, memoriaDisponible);
+        return false;
     }
 
-    // PASO 2: Si llegamos aquí, sí hay RAM. Le decimos al Planificador que construya el PCB.
-    // Asumo que tu crearYAsignarProceso devuelve el PID asignado.
-    // Aquí se delegaría la creación del proceso al planificador, que a su vez interactuaría con el gestor de recursos para asignar memoria, etc.
-    uint32_t nuevoPid = planificador.crearYAsignarProceso(nombre, prioridad, rafaga, memoria);
+    // 1. Crear el proceso en el planificador
+    uint32_t pid = planificador.crearYAsignarProceso(nombre,prioridad,rafaga,memReq);
 
-    // PASO 3: Apartamos físicamente la memoria en el GestorRecursos
-    recursos.asignarMemoria(nuevoPid, memoria);
+    // 2. Asignar memoria al proceso (la validación ocurre dentro de asignarMemoria)
+    if (!asignarMemoriaProceso(pid, memReq)) {
+        const uint32_t disponibleActual = recursos.obtenerMemoriaMaxima() - recursos.obtenerMemoriaUsada();
+        registros.logInsuficienteMemoria(memReq, disponibleActual);
+        return false;
+    }
 
-    // El registro de éxito ya lo maneja el GestorRecursos internamente gracias a su puntero a logs.
+    return true;
+
 }
+// ================= LIBERAR MEMORIA =================
+void MotorSimulacion::liberarMemoriaRAM(uint32_t pid) {
+    liberarMemoriaProceso(pid);
+    planificador.actualizarMemoriaProceso(pid, 0);
+}
+
+
 
 void MotorSimulacion::ejecutarPasoSiguiente() {
     // =========================================================
@@ -61,9 +101,22 @@ void MotorSimulacion::ejecutarPasoSiguiente() {
     // FASE 2: DESPACHADOR (CONTEXT SWITCH)
     planificador.ejecutarDespachador();
 
+    // Guardamos quién quedó realmente en CPU después del despacho,
+    // porque ese es el proceso que puede terminar en esta iteración.
+    const uint32_t pidEnCPU = planificador.obtenerPidEnEjecucion();
+
     // FASE 3: EJECUCIÓN EN CPU
     // La CPU descuenta la ráfaga del proceso actual
     planificador.ejecutarCPU();
+
+    // Si el proceso que entró a CPU terminó en este tick, liberamos la memoria
+    // desde la MISMA instancia de GestorRecursos que la asignó.
+    if (pidEnCPU != 0 && planificador.obtenerPidEnEjecucion() == 0) {
+        const Proceso& procesoTerminado = planificador.obtenerDetallesProceso(pidEnCPU);
+        if (procesoTerminado.obtenerRafagaRestante() == 0) {
+            liberarMemoriaRAM(pidEnCPU);
+        }
+    }
 
     // FASE 4: CRONÓMETRO Y LOGS
     planificador.avanzarTiempo();

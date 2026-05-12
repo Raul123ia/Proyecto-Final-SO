@@ -1,6 +1,6 @@
 #include "core/Planificador/Planificador.h"
 #include "core/Planificador/Proceso.h"
-
+#include "core/MotorSimulacion/MotorSimulacion.h"
 
 // Constructor
 Planificador::Planificador(TipoAlgoritmo _algoritmo, int _quantum)
@@ -22,13 +22,13 @@ uint32_t Planificador::crearYAsignarProceso(std::string nombre, int prioridad, u
     // 1. Instanciamos el proceso
     Proceso nuevo_proceso(nombre, prioridad, rafaga, memoria);
     uint32_t nuevo_pid = nuevo_proceso.obtenerPid();
-    
+
     // 2. Lo guardamos en el mapa. Usamos emplace porque es más eficiente que insert.
     tabla_procesos.emplace(nuevo_pid, nuevo_proceso);
-    
+
     // 3. Formamos su PID en la cola de listos
     cola_listos.push(nuevo_pid);
-    
+
     return nuevo_pid;
 }
 // Implementación del manejador de Llamadas al Sistema
@@ -97,6 +97,14 @@ void Planificador::ejecutarDespachador() {
                 pid_en_ejecucion = cola_listos.front();
                 cola_listos.pop();
                 tabla_procesos.at(pid_en_ejecucion).actualizarEstado(EstadoProceso::EJECUTANDO);
+                if (tabla_procesos.at(pid_en_ejecucion).obtenerRafagaRestante() == 0) {
+
+                    // liberar memoria
+                    recursos.liberarMemoria(pid_en_ejecucion);
+
+                    // guardar historial
+                    historial_terminados.push_back(pid_en_ejecucion);
+                }
             }
             break;
 
@@ -117,6 +125,14 @@ void Planificador::ejecutarDespachador() {
                 // Liberamos la CPU y reseteamos el cronómetro
                 pid_en_ejecucion = 0;
                 ticks_ejecutados_quantum = 0;
+                if (tabla_procesos.at(pid_en_ejecucion).obtenerRafagaRestante() == 0) {
+
+                    // liberar memoria
+                    recursos.liberarMemoria(pid_en_ejecucion);
+
+                    // guardar historial
+                    historial_terminados.push_back(pid_en_ejecucion);
+                }
             }
 
             // 2. Si la CPU está libre (ya sea porque el proceso terminó por su cuenta,
@@ -251,3 +267,8 @@ std::queue<uint32_t> Planificador::obtenerColaListos() const {
 std::queue<uint32_t> Planificador::obtenerColaSuspendidos() const {
     return cola_suspendidos;
 }
+
+void Planificador::actualizarMemoriaProceso(uint32_t pid, uint32_t memoria) {
+    tabla_procesos.at(pid).actualizarMemoriaAsignada(memoria);
+}
+

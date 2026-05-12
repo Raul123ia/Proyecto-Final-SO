@@ -4,6 +4,7 @@
 #include <queue>
 #include <vector>
 #include <unordered_map>
+#include "core/GestorRecursos/GestorRecursos.h"
 #include <cstdint>
 #include <stdexcept>
 #include "Proceso.h"
@@ -47,7 +48,7 @@ private:
     
     // 0 significa que la CPU está inactiva (idle)
     uint32_t pid_en_ejecucion; 
-
+    GestorRecursos recursos;
 public:
     Planificador(TipoAlgoritmo _algoritmo, int _quantum = 0);
 
@@ -74,7 +75,9 @@ public:
     const std::unordered_map<uint32_t, Proceso>& obtenerTablaProcesos() const;
     std::queue<uint32_t> obtenerColaListos() const;
     std::queue<uint32_t> obtenerColaSuspendidos() const;
-    
+
+    void actualizarMemoriaProceso(uint32_t pid, uint32_t memoria);
+
     bool llamadaAlSistema(TipoLlamada tipo, std::string recurso, GestorComunicacion& ipc);
 };
 

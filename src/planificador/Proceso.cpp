@@ -14,6 +14,7 @@ uint32_t Proceso::obtenerPid() const { return pid; }
 std::string Proceso::obtenerNombre() const { return nombre; }
 EstadoProceso Proceso::obtenerEstado() const { return estado; }
 uint64_t Proceso::obtenerRafagaRestante() const { return rafaga_restante; }
+uint32_t Proceso::obtenerMemoriaAsignada() const { return memoria_asignada; }
 
 // Métodos de control
 bool Proceso::actualizarEstado(EstadoProceso nuevo) {
@@ -27,6 +28,10 @@ bool Proceso::actualizarEstado(EstadoProceso nuevo) {
 
 void Proceso::vincularRecurso(std::string nombre_recurso) {
     recursos_fisicos.push_back(nombre_recurso);
+}
+
+void Proceso::actualizarMemoriaAsignada(uint32_t memoria) {
+    memoria_asignada = memoria;
 }
 
 // El motor del PCB

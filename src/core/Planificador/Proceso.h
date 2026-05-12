@@ -15,7 +15,7 @@ enum class EstadoProceso {
 
 class Proceso {
 private:
-    static std::atomic_uint32_t CONTADOR_PID; 
+    static std::atomic_uint32_t CONTADOR_PID;
     uint32_t pid;
     std::string nombre;
     EstadoProceso estado;
@@ -29,18 +29,20 @@ public:
     Proceso(std::string _nombre, int _prioridad, uint64_t _rafaga, uint32_t _memoria);
 
     // Getters esenciales para la UI y el Planificador
-    uint32_t obtenerPid() const;
-    std::string obtenerNombre() const;
-    EstadoProceso obtenerEstado() const;
-    uint64_t obtenerRafagaRestante() const;
-    int obtenerPrioridad() const;
+    [[nodiscard]] uint32_t obtenerPid() const;
+    [[nodiscard]] std::string obtenerNombre() const;
+    [[nodiscard]] EstadoProceso obtenerEstado() const;
+    [[nodiscard]] uint64_t obtenerRafagaRestante() const;
+    [[nodiscard]] int obtenerPrioridad() const;
+    [[nodiscard]] uint32_t obtenerMemoriaAsignada() const;
 
     // Métodos de control
     bool actualizarEstado(EstadoProceso nuevo);
     void vincularRecurso(std::string nombre);
-    
+    void actualizarMemoriaAsignada(uint32_t memoria);
     // Novedad: Método para simular el paso del tiempo en el procesador
-    void ejecutarUnTick(); 
+    void ejecutarUnTick();
 };
+
 
 #endif // PROCESO_H
