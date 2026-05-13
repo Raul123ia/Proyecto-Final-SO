@@ -63,12 +63,13 @@ public:
     void ejecutarCicloCompleto(); // Método aglomerador para correr todo el ciclo de un golpe (avanzar tiempo + despachador + CPU)
     // Métodos públicos de operación (ahora trabajan por copia o ID)
     // Recibe los datos y el Planificador construye el proceso internamente
-    uint32_t crearYAsignarProceso(std::string nombre, int prioridad, uint64_t rafaga, uint32_t memoria);
+    uint32_t crearYAsignarProceso(std::string nombre, int prioridad, uint64_t rafaga, uint32_t memoria, TipoProceso tipo = TipoProceso::NORMAL);
     
     void suspender(uint32_t pid);
     void reanudar(uint32_t pid);
     void finalizar(uint32_t pid, CausaTerminacion causa);
     void ejecutarDespachador();
+    void actualizarContadorPrograma(uint32_t pid, int nuevo_contador_programa);
     // Getters para el estado general del sistema (útil para la UI)
     uint64_t obtenerTiempoGlobal() const;
     uint32_t obtenerPidEnEjecucion() const;

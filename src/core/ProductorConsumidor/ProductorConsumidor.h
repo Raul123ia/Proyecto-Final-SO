@@ -1,17 +1,21 @@
-#ifndef SIMULACION_IPC_HPP
-#define SIMULACION_IPC_HPP
+#ifndef PRODUCTOR_CONSUMIDOR_HPP
+#define PRODUCTOR_CONSUMIDOR_HPP
 
 #include <queue>
 #include <cstdint>
 #include "../GestorComunicacion/GestorComunicacion.h"
+#include "../Planificador/Planificador.h"
 
-class SimulacionIPC {
+class ProductorConsumidor {
 private:
     std::queue<int> buffer_compartido;
-
+    const size_t CAPACIDAD_MAXIMA = 5;// Capacidad máxima del buffer
 public:
-    void simularProductor(GestorComunicacion& ipc, uint32_t pid, int item);
-    void simularConsumidor(GestorComunicacion& ipc, uint32_t pid);
+    ProductorConsumidor() = default;
+    void simularProductor(Planificador& Planificador, GestorComunicacion& ipc, uint32_t pid, int item);
+    void simularConsumidor(Planificador& Planificador, GestorComunicacion& ipc, uint32_t pid);
+    size_t obtenerTamanioBuffer() const { return buffer_compartido.size(); }
+    size_t obtenerCapacidadMaxima() const { return CAPACIDAD_MAXIMA; }
 };
 
-#endif // SIMULACION_IPC_HPP
+#endif // PRODUCTOR_CONSUMIDOR_HPP

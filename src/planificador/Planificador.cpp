@@ -18,9 +18,9 @@ const Proceso& Planificador::obtenerDetallesProceso(uint32_t pid) const {
 }
 
 // Creación y registro de procesos
-uint32_t Planificador::crearYAsignarProceso(std::string nombre, int prioridad, uint64_t rafaga, uint32_t memoria) {
+uint32_t Planificador::crearYAsignarProceso(std::string nombre, int prioridad, uint64_t rafaga, uint32_t memoria, TipoProceso tipo) {
     // 1. Instanciamos el proceso
-    Proceso nuevo_proceso(nombre, prioridad, rafaga, memoria);
+    Proceso nuevo_proceso(nombre, prioridad, rafaga, memoria, tipo);
     uint32_t nuevo_pid = nuevo_proceso.obtenerPid();
 
     // 2. Lo guardamos en el mapa. Usamos emplace porque es más eficiente que insert.
@@ -105,6 +105,7 @@ void Planificador::ejecutarDespachador() {
                     // guardar historial
                     historial_terminados.push_back(pid_en_ejecucion);
                 }
+                //Aqui se debe validar sl tiempo de rafaga es igual a 0, se debe liberar la memoria y marcar el proceso como terminado, para luego pasar al siguiente proceso de la cola de listos
             }
             break;
 
@@ -172,7 +173,7 @@ void Planificador::ejecutarCPU() {
         Proceso& proceso_actual = tabla_procesos.at(pid_en_ejecucion);
         
         // AQUÍ es donde se resta el tiempo de ráfaga 
-        proceso_actual.ejecutarUnTick(); 
+        proceso_actual.ejecutarUnTick();
 
         /*El hardware avisa que se consumió un tick del quantum
          (Solo relevante para Round Robin)
@@ -272,3 +273,7 @@ void Planificador::actualizarMemoriaProceso(uint32_t pid, uint32_t memoria) {
     tabla_procesos.at(pid).actualizarMemoriaAsignada(memoria);
 }
 
+
+void Planificador::actualizarContadorPrograma(uint32_t pid, int nuevo_contador_programa) {
+   tabla_procesos.at(pid).establecerContadorPrograma(nuevo_contador_programa);
+}
