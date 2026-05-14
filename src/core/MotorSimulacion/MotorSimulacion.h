@@ -26,7 +26,7 @@ public:
     // Métodos que consumirá la Interfaz Gráfica (La API Pública)
     void iniciar(TipoAlgoritmo algoritmo, int quantum);
     // ================= CREAR PROCESO =================
-    bool crearProceso(std::string nombre,int rafaga,int prioridad,int memoria);
+    bool crearProceso(std::string nombre, int rafaga, int prioridad, int memoria, TipoProceso tipo = TipoProceso::NORMAL);
 
     // ================= RAM =================
     bool validarMemoriaProceso(uint32_t memoria) const;
@@ -45,7 +45,6 @@ public:
 
     // ================= GETTERS =================
     uint32_t obtenerMemoriaUsada() const;
-    void crearProceso(std::string nombre, int rafaga, int prioridad, int memoria, TipoProceso tipo = TipoProceso::NORMAL);
     void iniciarSimulacionProductorConsumidor(int rafaga, int prioridad, int memoria);
 
     // Este es el corazón de tu pipeline de 4 fases

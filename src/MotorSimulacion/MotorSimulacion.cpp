@@ -52,7 +52,7 @@ void MotorSimulacion::iniciarSimulacionProductorConsumidor(int rafaga, int prior
 }
  //Método terminado, solo falta implementar .anotarEvento en GestorLogs para que el log de creación de proceso quede registrado.
 // ================= CREACIÓN DE PROCESO MEMORIA=================
-bool MotorSimulacion::crearProceso(std::string nombre,int rafaga,int prioridad,int memoria) {
+bool MotorSimulacion::crearProceso(std::string nombre, int rafaga, int prioridad, int memoria, TipoProceso tipo) {
 
     uint32_t memReq = static_cast<uint32_t>(memoria);
 
@@ -64,7 +64,7 @@ bool MotorSimulacion::crearProceso(std::string nombre,int rafaga,int prioridad,i
     }
 
     // 1. Crear el proceso en el planificador
-    uint32_t pid = planificador.crearYAsignarProceso(nombre,prioridad,rafaga,memReq);
+    uint32_t pid = planificador.crearYAsignarProceso(nombre, prioridad, rafaga, memReq, tipo);
 
     // 2. Asignar memoria al proceso (la validación ocurre dentro de asignarMemoria)
     if (!asignarMemoriaProceso(pid, memReq)) {
