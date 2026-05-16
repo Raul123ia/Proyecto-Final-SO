@@ -20,8 +20,9 @@
 #include <QTableWidgetItem>
 #include <QTextEdit>
 #include <QVBoxLayout>
+#include <QTimer>
 
-// Inicializa el motor de simulacióny construye la interfaz gráfica.
+// Inicializa el motor de simulación y construye la interfaz gráfica.
 InterfazGrafica::InterfazGrafica (MotorSimulacion &motor, QWidget *parent): QMainWindow(parent), m_motor(motor) 
 {
     construirInterfaz();
@@ -32,6 +33,7 @@ InterfazGrafica::InterfazGrafica (MotorSimulacion &motor, QWidget *parent): QMai
 
 void InterfazGrafica::construirInterfaz()
 {
+    m_relojSistema = new QTimer(this);
     auto *central = new QWidget(this);
     auto *raiz = new QVBoxLayout(central);
     raiz->setContentsMargins(16, 16, 16, 16);
@@ -62,17 +64,22 @@ void InterfazGrafica::construirInterfaz()
     m_labelBuffer->setText(tr("Buffer: 0/0"));
     encabezado->addWidget(m_labelBuffer);
 
+    m_lblEsperandoMemoria = new QLabel(this);
+    m_lblEsperandoMemoria->setObjectName("subtituloPrincipal");
+    m_lblEsperandoMemoria->setText(tr("Esperando Memoria: 0"));
+    m_lblEsperandoMemoria->setStyleSheet("color: #F59E0B; font-weight: bold;"); 
+    encabezado->addWidget(m_lblEsperandoMemoria);
     raiz->addLayout(encabezado);
 
     auto *zonaBotones = new QHBoxLayout();
-    m_btnSiguientePaso = new QPushButton(tr("Siguiente Paso"), this);
-    m_btnSiguientePaso->setObjectName("btnPrincipal");
-    m_btnIniciarSimulacion = new QPushButton(tr("Iniciar Simulacion"), this);
-    m_btnIniciarSimulacion->setObjectName("btnSecundario");
-    m_btnCrearProceso = new QPushButton(tr("Crear Proceso"), this);
-    m_btnCrearProceso->setObjectName("btnSecundario");
+    
+    // Solo dejamos el botón de Iniciar y el de Algoritmo
+    m_btnIniciarSimulacion = new QPushButton(tr("Iniciar Simulacion Automática"), this);
+    m_btnIniciarSimulacion->setObjectName("btnPrincipal"); // Lo hacemos el botón principal
+    
     auto *btnAlgoritmo = new QPushButton(tr("Seleccionar Algoritmo"), this);
     btnAlgoritmo->setObjectName("btnSecundario");
+    
     connect(btnAlgoritmo, &QPushButton::clicked, this, [this, btnAlgoritmo]() {
         QDialog dialog(this);
         dialog.setWindowTitle(tr("Seleccionar algoritmo de planificación"));
@@ -121,9 +128,8 @@ void InterfazGrafica::construirInterfaz()
             statusBar()->showMessage(tr("Algoritmo seleccionado: %1").arg(algoritmoSeleccionado), 4000);
         }
     });
-    zonaBotones->addWidget(m_btnSiguientePaso);
+    
     zonaBotones->addWidget(m_btnIniciarSimulacion);
-    zonaBotones->addWidget(m_btnCrearProceso);
     zonaBotones->addWidget(btnAlgoritmo);
     zonaBotones->addStretch();
     raiz->addLayout(zonaBotones);
@@ -197,14 +203,14 @@ void InterfazGrafica::construirInterfaz()
     setCentralWidget(central);
     resize(1280, 780);
     setWindowTitle(tr("Simulador de Gestión de Procesos"));
-    statusBar()->showMessage(tr("Listo para simular acciones"));
+    statusBar()->showMessage(tr("Listo para iniciar la simulación"));
 }
 
 void InterfazGrafica::conectarSenales()
 {
-    connect(m_btnSiguientePaso, &QPushButton::clicked, this, &InterfazGrafica::ejecutarAccionUsuario);
-    connect(m_btnCrearProceso, &QPushButton::clicked, this, &InterfazGrafica::crearProceso);
-    connect(m_btnIniciarSimulacion, &QPushButton::clicked, this, &InterfazGrafica::iniciarSimulacionProductorConsumidor);
+    // Solo quedan dos conexiones: el botón de iniciar y el reloj automático
+    connect(m_btnIniciarSimulacion, &QPushButton::clicked, this, &InterfazGrafica::iniciarSimulacionAutomatica);
+    connect(m_relojSistema, &QTimer::timeout, this, &InterfazGrafica::ejecutarAccionUsuario);
 }
 
 void InterfazGrafica::aplicarEstilo()
@@ -285,41 +291,36 @@ void InterfazGrafica::aplicarEstilo()
             .arg(QStringLiteral("#0F172A"), QStringLiteral("#E5E7EB"), QStringLiteral("#111827"), QStringLiteral("#2F80ED")));
 }
 
-//Comienzan métodos actualizados para mostrar datos reales desde tu motor de simulación, eliminando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase MotorSimulacion tenga los métodos necesarios para acceder a los datos de forma segura y eficiente.
-
 void InterfazGrafica::actualizarVistas()
 {
     mostrarColasPlanificacion();
     listarProcesosYRecursos();
     mostrarHistorialLogs();
 
-    // ¡Le preguntamos directamente a la fuente de la verdad sobre la memoria usada! Esto asegura que la barra siempre refleje el estado real del sistema, sin depender de cálculos locales o datos duplicados.
     const uint32_t usados = m_motor.obtenerRecursos().obtenerMemoriaUsada();
-    
     m_barraMemoria->setValue(usados);
     m_barraMemoria->setFormat(tr("%v MB / %m MB usados"));
 
     const size_t ocupacion = m_motor.obtenerOcupacionBuffer();
     const size_t capacidad = m_motor.obtenerCapacidadBuffer();
     m_labelBuffer->setText(tr("Buffer: %1/%2").arg(ocupacion).arg(capacidad));
+
+    const size_t enEspera = m_motor.obtenerProcesosNuevosPendientes();
+    m_lblEsperandoMemoria->setText(tr("Esperando Memoria: %1 procesos").arg(enEspera));
 }
 
-//Metodo actualizado para mostrar las colas de planificación directamente desde tu estructura real, evitando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase Planificador tenga los métodos necesarios para obtener las colas de forma segura.
 void InterfazGrafica::mostrarColasPlanificacion()
 {
-  m_listaListos->clear();
+    m_listaListos->clear();
     m_listaSuspendidos->clear();
 
-    // Pedimos copias de las colas para poder leerlas destruyéndolas localmente
     auto colaListos = m_motor.obtenerPlanificador().obtenerColaListos();
     auto colaSuspendidos = m_motor.obtenerPlanificador().obtenerColaSuspendidos();
 
-    // Procesar Cola de Listos
     while (!colaListos.empty()) {
         uint32_t pid = colaListos.front();
-        colaListos.pop(); // Avanzamos en la copia
+        colaListos.pop(); 
         
-        // Usamos tu función segura
         const Proceso& proc = m_motor.obtenerPlanificador().obtenerDetallesProceso(pid);
         
         m_listaListos->addItem(QStringLiteral("PID %1 - %2 | Pri %3")
@@ -328,7 +329,6 @@ void InterfazGrafica::mostrarColasPlanificacion()
             .arg(proc.obtenerPrioridad())); 
     }
 
-    // Procesar Cola de Suspendidos
     while (!colaSuspendidos.empty()) {
         uint32_t pid = colaSuspendidos.front();
         colaSuspendidos.pop();
@@ -341,33 +341,22 @@ void InterfazGrafica::mostrarColasPlanificacion()
             .arg(proc.obtenerPrioridad()));
     }
 }
-//Metodo actualizado para listar procesos y recursos directamente desde tu estructura real, evitando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase Proceso tenga los getters necesarios para acceder a sus atributos de forma segura.
+
 void InterfazGrafica::listarProcesosYRecursos()
 {
-    // 1. Obtenemos la referencia directa y segura a tu memoria
     const auto& tabla = m_motor.obtenerPlanificador().obtenerTablaProcesos();
-
-    // 2. Preparamos la tabla de Qt
     m_tablaProcesos->setRowCount(tabla.size());
     int fila = 0;
 
-    // 3. Iteramos sobre el mapa real
     for (const auto& par : tabla) {
-        const Proceso& proceso = par.second; // par.first es el PID, par.second es el PCB
+        const Proceso& proceso = par.second; 
 
-        // Llenamos las celdas (usando QString::number para ints y fromStdString para std::string)
         m_tablaProcesos->setItem(fila, 0, new QTableWidgetItem(QString::number(proceso.obtenerPid())));
         m_tablaProcesos->setItem(fila, 1, new QTableWidgetItem(QString::fromStdString(proceso.obtenerNombre())));
-        
-        // TODO: Asegúrate de tener un getter que convierta tu enum EstadoProceso a texto
         m_tablaProcesos->setItem(fila, 2, new QTableWidgetItem(QStringLiteral("Activo"))); 
-        
         m_tablaProcesos->setItem(fila, 3, new QTableWidgetItem(QString::number(proceso.obtenerPrioridad())));
         m_tablaProcesos->setItem(fila, 4, new QTableWidgetItem(QString::number(proceso.obtenerRafagaRestante())));
-        
-        // TODO: Reemplaza este 0 con el getter real de la memoria del proceso si es privado
         m_tablaProcesos->setItem(fila, 5, new QTableWidgetItem(QString::number(proceso.obtenerMemoriaAsignada())));
-
         fila++;
     }
     m_tablaProcesos->resizeRowsToContents();
@@ -376,88 +365,11 @@ void InterfazGrafica::listarProcesosYRecursos()
 void InterfazGrafica::mostrarHistorialLogs()
 {
     m_historialLogs->clear();
-
-    // Le pedimos los datos reales al sistema a través del motor.
-    // Forma correcta: Pedimos el gestor de logs, y de ahí exportamos el historial completo
     auto historial = m_motor.obtenerLogs().exportarHistorialLogs();
-
     for (const auto &linea : historial)
     {
-        // Convertimos de std::string (C++) a QString (Qt) al vuelo
         m_historialLogs->append(QString::fromStdString(linea));
     }
-}
-
-void InterfazGrafica::capturarDatosProceso()
-{
-    QDialog dialog(this);
-    dialog.setWindowTitle(tr("Crear nuevo proceso"));
-    dialog.setModal(true);
-
-    auto *layout = new QVBoxLayout(&dialog);
-    auto *form = new QFormLayout();
-
-    auto *nombre = new QLineEdit(&dialog);
-    nombre->setPlaceholderText(tr("Ej: Servidor"));
-
-    auto *rafaga = new QSpinBox(&dialog);
-    rafaga->setRange(1, 100000);
-    rafaga->setValue(10);
-
-    auto *prioridad = new QSpinBox(&dialog);
-    prioridad->setRange(0, 9);
-    prioridad->setValue(3);
-
-    auto *memoria = new QSpinBox(&dialog);
-    // Cambiado: Ahora el límite superior lo dicta el Gestor de Recursos real
-    // Si aún no tienes el getter, puedes usar 4096 por ahora.
-    memoria->setRange(1, m_motor.obtenerRecursos().obtenerMemoriaMaxima()); 
-    memoria->setValue(256);
-
-    form->addRow(tr("Nombre"), nombre);
-    form->addRow(tr("Ráfaga"), rafaga);
-    form->addRow(tr("Prioridad"), prioridad);
-    form->addRow(tr("Memoria (MB)"), memoria);
-    layout->addLayout(form);
-
-    auto *botones = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-    layout->addWidget(botones);
-
-    connect(botones, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-    connect(botones, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        // Cambiado: Uso de statusBar para feedback inmediato de UI
-        statusBar()->showMessage(tr("Creación de proceso cancelada."), 4000);
-        return;
-    }
-
-    const QString nombreProceso = nombre->text().trimmed();
-    if (nombreProceso.isEmpty())
-    {
-        QMessageBox::warning(this, tr("Datos inválidos"), tr("El nombre del proceso no puede estar vacío."));
-        return;
-    }
-
-    // =========================================================================
-    // INYECCIÓN DE LÓGICA REAL (ADIÓS MOCKS)
-    // =========================================================================
-    
-    // El MotorSimulacion se encarga de:
-    // 1. Pedirle al Planificador que cree el PCB.
-    // 2. Pedirle al GestorRecursos que reserve la memoria.
-    // 3. Generar el log del evento.
-    m_motor.crearProceso(
-        nombreProceso.toStdString(),
-        rafaga->value(),
-        prioridad->value(),
-        memoria->value()
-    );
-
-    // Finalmente, refrescamos todas las tablas y listas con datos del kernel
-    actualizarVistas();
-    statusBar()->showMessage(tr("Proceso '%1' enviado al sistema.").arg(nombreProceso), 4000);
 }
 
 void InterfazGrafica::ejecutarAccionUsuario()
@@ -465,44 +377,30 @@ void InterfazGrafica::ejecutarAccionUsuario()
     // 1. Le decimos al CPU que haga 1 tick de reloj
     m_motor.ejecutarPasoSiguiente();
     
-    // 2. Refrescamos la pantalla para ver qué cambió
+    // 2. Refrescamos la pantalla
     actualizarVistas();
 }
-// Fin de métodos actualizados para mostrar datos reales desde tu motor de simulación, eliminando cualquier código hardcodeado o mockeado. Asegúrate de que tu clase MotorSimulacion tenga los métodos necesarios para acceder a los datos de forma segura y eficiente.
-void InterfazGrafica::crearProceso()
-{
-    capturarDatosProceso();
-}
 
-void InterfazGrafica::iniciarSimulacionProductorConsumidor()
+void InterfazGrafica::iniciarSimulacionAutomatica()
 {
     QDialog dialog(this);
-    dialog.setWindowTitle(tr("Iniciar simulacion Productor-Consumidor"));
+    dialog.setWindowTitle(tr("Configuración de Simulación Autónoma"));
     dialog.setModal(true);
 
     auto *layout = new QVBoxLayout(&dialog);
     auto *form = new QFormLayout();
 
-    auto *rafaga = new QSpinBox(&dialog);
-    rafaga->setRange(1, 100000);
-    rafaga->setValue(10);
+    auto *spinCantidad = new QSpinBox(&dialog);
+    spinCantidad->setRange(1, 500);
+    spinCantidad->setValue(80); 
 
-    auto *prioridad = new QSpinBox(&dialog);
-    prioridad->setRange(0, 9);
-    prioridad->setValue(3);
+    auto *spinVelocidad = new QSpinBox(&dialog);
+    spinVelocidad->setRange(10, 5000);
+    spinVelocidad->setValue(500); 
+    spinVelocidad->setSuffix(" ms");
 
-    auto *memoria = new QSpinBox(&dialog);
-    memoria->setRange(1, m_motor.obtenerRecursos().obtenerMemoriaMaxima());
-    memoria->setValue(64);
-
-    auto *ticks = new QSpinBox(&dialog);
-    ticks->setRange(0, 1000);
-    ticks->setValue(0);
-
-    form->addRow(tr("Rafaga"), rafaga);
-    form->addRow(tr("Prioridad"), prioridad);
-    form->addRow(tr("Memoria (MB)"), memoria);
-    form->addRow(tr("Ticks iniciales"), ticks);
+    form->addRow(tr("Cantidad de procesos a generar:"), spinCantidad);
+    form->addRow(tr("Velocidad del reloj (Tick):"), spinVelocidad);
     layout->addLayout(form);
 
     auto *botones = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
@@ -516,28 +414,14 @@ void InterfazGrafica::iniciarSimulacionProductorConsumidor()
         return;
     }
 
-    m_motor.iniciarSimulacionProductorConsumidor(
-        rafaga->value(),
-        prioridad->value(),
-        memoria->value()
-    );
-
-    const int ticksIniciales = ticks->value();
-    for (int i = 0; i < ticksIniciales; ++i) {
-        m_motor.ejecutarPasoSiguiente();
-    }
-
     m_btnIniciarSimulacion->setEnabled(false);
+
+    int cantidad = spinCantidad->value();
+    m_motor.inicializarSimulacionAutomatica(cantidad);
+
+    int velocidadMs = spinVelocidad->value();
+    m_relojSistema->start(velocidadMs);
+
     actualizarVistas();
-    statusBar()->showMessage(tr("Simulacion Productor-Consumidor inicializada."), 4000);
+    statusBar()->showMessage(tr("Simulación autónoma iniciada a %1 ms por tick.").arg(velocidadMs), 4000);
 }
-
-
-
-
-
-
-
-
-
-

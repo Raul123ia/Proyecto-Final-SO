@@ -5,6 +5,7 @@
 #include <QVector>
 #include "core/MotorSimulacion/MotorSimulacion.h"
 
+class QTimer;
 class QListWidget;
 class QProgressBar;
 class QTableWidget;
@@ -28,11 +29,11 @@ public:
     
 public slots:
     void ejecutarAccionUsuario();
-    void crearProceso();
-    void iniciarSimulacionProductorConsumidor();
+    void iniciarSimulacionAutomatica();
 
 private:
     MotorSimulacion& m_motor;
+    
 
     void construirInterfaz();
     void conectarSenales();
@@ -48,9 +49,9 @@ private:
     QTableWidget *m_tablaProcesos{};
     QTextEdit *m_historialLogs{};
     QProgressBar *m_barraMemoria{};
-    QPushButton *m_btnSiguientePaso{};
-    QPushButton *m_btnCrearProceso{};
     QPushButton *m_btnIniciarSimulacion{};
     QLabel *m_labelBuffer{};
+    QLabel *m_lblEsperandoMemoria{};
+    QTimer *m_relojSistema{};
 };
 

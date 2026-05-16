@@ -7,7 +7,9 @@
 #include "core/GestorLogs/GestorLogs.h"
 #include "core/CausaTerminacion/CausaTerminacion.h"
 #include "core/ProductorConsumidor/ProductorConsumidor.h"
-
+#include "core/Planificador/Proceso.h"
+#include <random>
+    
 MotorSimulacion::MotorSimulacion()
     : planificador(TipoAlgoritmo::FCFS), // Inicializamos el kernel con FCFS por defecto
     recursos(&registros),               // ¡CONEXIÓN CLAVE!: Pasamos la dirección de los logs al hardware
@@ -22,6 +24,20 @@ void MotorSimulacion::iniciar(TipoAlgoritmo algoritmo, int quantum) {
     // planificador = Planificador(algoritmo, quantum);
 }
 // ================= RAM =================
+//  Método para intentar meter procesos a RAM
+void MotorSimulacion::intentarCargarProcesosAMemoria() {
+    // Mientras haya procesos esperando y haya memoria suficiente para el primero de la fila
+    while (!cola_nuevos.empty()) {
+        const auto& p = cola_nuevos.front();
+        if (validarMemoriaProceso(p.memoria)) {
+            // Si cabe, lo creamos de verdad y lo metemos al Planificador
+            crearProceso(p.nombre, p.rafaga, p.prioridad, p.memoria, p.tipo);
+            cola_nuevos.pop(); // Lo sacamos de la sala de espera
+        } else {
+            break; // Si el primero de la fila no cabe, nadie más entra (FCFS de memoria)
+        }
+    }
+}
 bool MotorSimulacion::validarMemoriaProceso(uint32_t memoria) const {
     return recursos.validarDisponibilidadMemoria(memoria);
 }
@@ -33,6 +49,38 @@ bool MotorSimulacion::asignarMemoriaProceso(uint32_t pid,uint32_t memoria) {
 uint32_t MotorSimulacion::liberarMemoriaProceso(uint32_t pid) {
     return recursos.liberarMemoria(pid);
 }
+// ================= CREACIÓN DE PROCESOS DE FORMA AUTOMÁTICA =================
+void MotorSimulacion::inicializarSimulacionAutomatica(int cantidad_procesos) {
+    // 1. Inicializamos los semáforos de IPC de una vez
+    comunicacion.inicializarSemaforo("Mutex", 1);
+    comunicacion.inicializarSemaforo("Espacios_Vacios", 5);
+    comunicacion.inicializarSemaforo("Items_Disponibles", 0);
+
+    // 2. Herramientas para números aleatorios
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distRafaga(5, 20); // Ráfagas entre 5 y 20
+    std::uniform_int_distribution<> distPrioridad(1, 5); 
+    std::uniform_int_distribution<> distMemoria(64, 1024); // Memoria entre 64MB y 1GB
+    std::uniform_int_distribution<> distTipo(1, 100); // Para probabilidad
+
+    // 3. Generamos todos los procesos y los mandamos a la sala de espera
+    for (int i = 1; i <= cantidad_procesos; ++i) {
+        std::string nombre = "P" + std::to_string(i);
+        TipoProceso tipo = TipoProceso::NORMAL;
+
+        // 20% de probabilidad de ser Productor o Consumidor
+        int prob = distTipo(gen);
+        if (prob <= 10) tipo = TipoProceso::PRODUCTOR;
+        else if (prob <= 20) tipo = TipoProceso::CONSUMIDOR;
+
+        ProcesoPendiente p = {nombre, distRafaga(gen), distPrioridad(gen), distMemoria(gen), tipo};
+        
+        cola_nuevos.push(p); // Los dejamos en la cola de Nuevos esperando RAM
+    }
+
+    registros.anotarEvento("[Sistema] Simulación inicializada con " + std::to_string(cantidad_procesos) + " procesos generados.");
+}
 // ================= CPU =================
 bool MotorSimulacion::asignarCPUProceso(uint32_t pid) {
     return recursos.asignarCPU(pid);
@@ -42,14 +90,6 @@ void MotorSimulacion::liberarCPUProceso(uint32_t pid) {
     recursos.liberarCPU(pid);
 }
 
-void MotorSimulacion::iniciarSimulacionProductorConsumidor(int rafaga, int prioridad, int memoria) {
-    comunicacion.inicializarSemaforo("Mutex", 1);
-    comunicacion.inicializarSemaforo("Espacios_Vacios", static_cast<int>(simulacion.obtenerCapacidadMaxima()));
-    comunicacion.inicializarSemaforo("Items_Disponibles", 0);
-
-    crearProceso("Productor", rafaga, prioridad, memoria, TipoProceso::PRODUCTOR);
-    crearProceso("Consumidor", rafaga, prioridad, memoria, TipoProceso::CONSUMIDOR);
-}
  //Método terminado, solo falta implementar .anotarEvento en GestorLogs para que el log de creación de proceso quede registrado.
 // ================= CREACIÓN DE PROCESO MEMORIA=================
 bool MotorSimulacion::crearProceso(std::string nombre, int rafaga, int prioridad, int memoria, TipoProceso tipo) {
@@ -88,7 +128,8 @@ void MotorSimulacion::ejecutarPasoSiguiente() {
     // =========================================================
     // EL PIPELINE ESTRICTO DE 4 FASES (UN TICK DE RELOJ)
     // =========================================================
-    
+    // Antes de cualquier cosa, intentamos cargar procesos nuevos a RAM (si es que hay)
+    intentarCargarProcesosAMemoria();
     // FASE 1: DESPACHADOR (CONTEXT SWITCH)
     planificador.ejecutarDespachador();
 
@@ -170,4 +211,8 @@ const GestorRecursos& MotorSimulacion::obtenerRecursos() const
 const Planificador& MotorSimulacion::obtenerPlanificador() const 
 {
     return planificador;
+}
+
+size_t MotorSimulacion::obtenerProcesosNuevosPendientes() const {
+    return cola_nuevos.size();
 }

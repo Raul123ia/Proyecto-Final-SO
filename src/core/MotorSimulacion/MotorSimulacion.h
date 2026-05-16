@@ -9,6 +9,14 @@
 #include "core/CausaTerminacion/CausaTerminacion.h"
 #include "core/ProductorConsumidor/ProductorConsumidor.h"
 
+struct ProcesoPendiente {
+    std::string nombre;
+    int rafaga;
+    int prioridad;
+    int memoria;
+    TipoProceso tipo;
+};
+
 class MotorSimulacion {
 private:
     // El "Hardware" y el "Kernel" bajo el capó
@@ -18,6 +26,7 @@ private:
     GestorLogs registros;
     ProductorConsumidor simulacion;
     int siguiente_item;
+    std::queue<ProcesoPendiente> cola_nuevos;
 
 public:
     // Constructor
@@ -29,6 +38,8 @@ public:
     bool crearProceso(std::string nombre, int rafaga, int prioridad, int memoria, TipoProceso tipo = TipoProceso::NORMAL);
 
     // ================= RAM =================
+    size_t obtenerProcesosNuevosPendientes() const;
+    void intentarCargarProcesosAMemoria();
     bool validarMemoriaProceso(uint32_t memoria) const;
 
     bool asignarMemoriaProceso(uint32_t pid,uint32_t memoria);
@@ -36,6 +47,7 @@ public:
     uint32_t liberarMemoriaProceso(uint32_t pid);
 
     // ================= CPU =================
+    void inicializarSimulacionAutomatica(int cantidad_procesos);
     bool asignarCPUProceso(uint32_t pid);
 
     void liberarCPUProceso(uint32_t pid);
@@ -45,7 +57,6 @@ public:
 
     // ================= GETTERS =================
     uint32_t obtenerMemoriaUsada() const;
-    void iniciarSimulacionProductorConsumidor(int rafaga, int prioridad, int memoria);
 
     // Este es el corazón de tu pipeline de 4 fases
     void ejecutarPasoSiguiente(); 
