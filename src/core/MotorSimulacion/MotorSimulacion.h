@@ -26,7 +26,7 @@ private:
     GestorLogs registros;
     ProductorConsumidor simulacion;
     int siguiente_item;
-    std::queue<ProcesoPendiente> cola_nuevos;
+    std::vector<ProcesoPendiente> cola_nuevos;
 
 public:
     // Constructor

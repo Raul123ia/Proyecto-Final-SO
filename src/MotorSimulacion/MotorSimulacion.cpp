@@ -26,15 +26,41 @@ void MotorSimulacion::iniciar(TipoAlgoritmo algoritmo, int quantum) {
 // ================= RAM =================
 //  Método para intentar meter procesos a RAM
 void MotorSimulacion::intentarCargarProcesosAMemoria() {
-    // Mientras haya procesos esperando y haya memoria suficiente para el primero de la fila
-    while (!cola_nuevos.empty()) {
-        const auto& p = cola_nuevos.front();
+    size_t ocupacionBuffer = obtenerOcupacionBuffer();
+    size_t capacidadBuffer = obtenerCapacidadBuffer();
+
+    auto it = cola_nuevos.begin();
+    while (it != cola_nuevos.end()) {
+        const auto& p = *it;
+        
+        // Logica de admision inteligente (Prevencion de Deadlock a largo plazo)
+        bool esProductor = (p.tipo == TipoProceso::PRODUCTOR);
+        bool esConsumidor = (p.tipo == TipoProceso::CONSUMIDOR);
+        
+        // 1. Si Buffer Lleno: Dar prioridad a consumidores (ignorar productores)
+        if (ocupacionBuffer == capacidadBuffer && esProductor) {
+            ++it; // Saltamos este productor temporalmente
+            continue;
+        }
+        
+        // 2. Si Buffer Vacio: Dar prioridad a productores (ignorar consumidores temporalmente opcional o dejarlos pasar? El prompt dice "prioridad de entrada a los Productores". Lo mas seguro es no bloquear a nadie a menos de que en serio este vacio y solo queremos productores. Para no ser tan estrictos, simplemente permitimos todo normal, a menos que si queramos saltar consumidores cuando esta vacio. "El admisor debe darle prioridad de entrada a los Productores". Podriamos retrasar consumidores si esta vacio).
+        if (ocupacionBuffer == 0 && esConsumidor) {
+            ++it; // Saltamos consumidor porque no tiene nada que leer
+            continue;
+        }
+
         if (validarMemoriaProceso(p.memoria)) {
             // Si cabe, lo creamos de verdad y lo metemos al Planificador
             crearProceso(p.nombre, p.rafaga, p.prioridad, p.memoria, p.tipo);
-            cola_nuevos.pop(); // Lo sacamos de la sala de espera
+            it = cola_nuevos.erase(it); // Lo sacamos de la sala de espera
+            
+            // Re-evaluar por si este u otros afectaron algo de los recursos
+            // No podemos saber la ocupacion real del buffer si el proceso todavia no es agendado,
+            // pero si evitamos admitir puros productores si el buffer esta lleno, esto detiene el deadlock.
         } else {
-            break; // Si el primero de la fila no cabe, nadie más entra (FCFS de memoria)
+            // Si no hay RAM para el proceso actual que SÍ queríamos admitir,
+            // continuamos iterando por si hay un proceso más pequeño en RAM o un Consumidor que sí quepa (First-Fit / Next-Fit dinámico en vez de FCFS estricto).
+            ++it; 
         }
     }
 }
@@ -76,7 +102,7 @@ void MotorSimulacion::inicializarSimulacionAutomatica(int cantidad_procesos) {
 
         ProcesoPendiente p = {nombre, distRafaga(gen), distPrioridad(gen), distMemoria(gen), tipo};
         
-        cola_nuevos.push(p); // Los dejamos en la cola de Nuevos esperando RAM
+        cola_nuevos.push_back(p); // Los dejamos en la cola de Nuevos esperando RAM
     }
 
     registros.anotarEvento("[Sistema] Simulación inicializada con " + std::to_string(cantidad_procesos) + " procesos generados.");
