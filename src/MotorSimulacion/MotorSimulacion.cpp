@@ -122,7 +122,35 @@ void MotorSimulacion::liberarMemoriaRAM(uint32_t pid) {
     planificador.actualizarMemoriaProceso(pid, 0);
 }
 
+void MotorSimulacion::limpiarProcesosHuerfanos() {
+    auto suspendidos = planificador.obtenerColaSuspendidos();
+    if (suspendidos.empty()) return;
 
+    // Tarea 4: Inyectamos tokens masivos para que ningún WAIT vuelva a bloquear a los procesos restantes
+    // Así podrán pasar libremente por sus estados hasta consumir toda su ráfaga y morir limpiamente.
+    comunicacion.inicializarSemaforo("Espacios_Vacios", 99999);
+    comunicacion.inicializarSemaforo("Items_Disponibles", 99999);
+    comunicacion.inicializarSemaforo("Mutex", 99999);
+
+    // Los pasamos todos a la cola de listos
+    for (uint32_t pid : suspendidos) {
+        planificador.reanudar(pid);
+    }
+    
+    registros.anotarEvento("[Sistema] Inactividad detectada. Iniciando protocolo Flush: Liberando " + std::to_string(suspendidos.size()) + " procesos huérfanos.");
+}
+
+void MotorSimulacion::establecerAlgoritmoPlanificacion(TipoAlgoritmo algoritmo) {
+    planificador.establecerAlgoritmo(algoritmo);
+}
+
+TipoAlgoritmo MotorSimulacion::obtenerAlgoritmoPlanificacion() const {
+    return planificador.obtenerAlgoritmo();
+}
+
+Planificador& MotorSimulacion::obtenerPlanificador() {
+    return planificador;
+}
 
 void MotorSimulacion::ejecutarPasoSiguiente() {
     // =========================================================
@@ -139,10 +167,10 @@ void MotorSimulacion::ejecutarPasoSiguiente() {
         const Proceso& procesoEnEjecucion = planificador.obtenerDetallesProceso(pidActual);
         switch (procesoEnEjecucion.obtenerTipoProceso()) {
             case TipoProceso::PRODUCTOR:
-                simulacion.simularProductor(planificador, comunicacion, pidActual, siguiente_item++);
+                simulacion.simularProductor(planificador, comunicacion, registros, pidActual, siguiente_item++);
                 break;
             case TipoProceso::CONSUMIDOR:
-                simulacion.simularConsumidor(planificador, comunicacion, pidActual);
+                simulacion.simularConsumidor(planificador, comunicacion, registros, pidActual);
                 break;
             case TipoProceso::NORMAL:
             default:
@@ -170,6 +198,16 @@ void MotorSimulacion::ejecutarPasoSiguiente() {
     // FASE 4: CRONÓMETRO Y LOGS
     planificador.avanzarTiempo();
     // registros.anotarEvento("Tick " + std::to_string(planificador.obtenerTiempoGlobal()) + " completado.");
+
+    // Tarea 3: Rutina de rescate final
+    // Si ya no quedan procesos nuevos por llegar, la cola de listos está vacía
+    // y la CPU está libre, significa que la simulación se estancó con puros huérfanos.
+    if (cola_nuevos.empty() && 
+        planificador.obtenerColaListos().empty() && 
+        planificador.obtenerPidEnEjecucion() == 0) {
+        
+        limpiarProcesosHuerfanos();
+    }
 }
 
 bool MotorSimulacion::invocarLlamadaSistema(TipoLlamada tipo, std::string recurso) {

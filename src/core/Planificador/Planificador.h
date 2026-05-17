@@ -41,9 +41,9 @@ private:
     // Novedad: La Tabla de Procesos Central (dueña de la memoria)
     std::unordered_map<uint32_t, Proceso> tabla_procesos;
     
-    // Las colas ahora solo guardan el ID del proceso
+    // Las colas ahora pueden ser manejadas y depuradas físicamente (vector para la de suspendidos)
     std::queue<uint32_t> cola_listos;
-    std::queue<uint32_t> cola_suspendidos;
+    std::vector<uint32_t> cola_suspendidos;
     std::vector<uint32_t> historial_terminados;
     
     // 0 significa que la CPU está inactiva (idle)
@@ -75,11 +75,16 @@ public:
     uint32_t obtenerPidEnEjecucion() const;
     const std::unordered_map<uint32_t, Proceso>& obtenerTablaProcesos() const;
     std::queue<uint32_t> obtenerColaListos() const;
-    std::queue<uint32_t> obtenerColaSuspendidos() const;
+    std::vector<uint32_t> obtenerColaSuspendidos() const;
 
     void actualizarMemoriaProceso(uint32_t pid, uint32_t memoria);
 
     bool llamadaAlSistema(TipoLlamada tipo, std::string recurso, GestorComunicacion& ipc);
+
+    // Nuevos métodos para gestionar el algoritmo y el quantum
+    void establecerAlgoritmo(TipoAlgoritmo nuevo_algoritmo);
+    TipoAlgoritmo obtenerAlgoritmo() const;
+    void establecerQuantum(int quantum);
 };
 
 #endif // PLANIFICADOR_H

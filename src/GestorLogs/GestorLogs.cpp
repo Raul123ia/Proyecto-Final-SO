@@ -17,9 +17,10 @@ std::vector<std::string> GestorLogs::exportarHistorialLogs() const {
 
 // ================= RAM =================
 void GestorLogs::logValidarDisponibilidadMemoria(uint32_t mb) {
-    std::string mensaje ="Validando " + std::to_string(mb) + " MB de RAM";
-    logsRAM.push_back(mensaje);
-    anotarEvento(mensaje);
+    // Filtrado para que no sature la vista (Tarea 1)
+    // std::string mensaje ="Validando " + std::to_string(mb) + " MB de RAM";
+    // logsRAM.push_back(mensaje);
+    // anotarEvento(mensaje);
 }
 
 void GestorLogs::logAsignarMemoria(uint32_t pid, uint32_t mb) {

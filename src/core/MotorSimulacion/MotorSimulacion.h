@@ -55,6 +55,9 @@ public:
     // ================= LIBERAR MEMORIA =================
     void liberarMemoriaRAM(uint32_t pid);
 
+    // ================= FLUSH (RESCATE DE HUÉRFANOS) =================
+    void limpiarProcesosHuerfanos();
+
     // ================= GETTERS =================
     uint32_t obtenerMemoriaUsada() const;
 
@@ -72,8 +75,13 @@ public:
 
     // Getters de solo lectura para que la UI pueda dibujar las tablas
     const Planificador& obtenerPlanificador() const;
+    Planificador& obtenerPlanificador(); // Versión no-const para poder modificarlo
     const GestorRecursos& obtenerRecursos() const;
     const GestorLogs& obtenerLogs() const;
     // El puerto de entrada para que las aplicaciones hablen con el Kernel
     bool invocarLlamadaSistema(TipoLlamada tipo, std::string recurso);
+
+    // Nuevos métodos para gestionar el algoritmo de planificación
+    void establecerAlgoritmoPlanificacion(TipoAlgoritmo algoritmo);
+    TipoAlgoritmo obtenerAlgoritmoPlanificacion() const;
 };

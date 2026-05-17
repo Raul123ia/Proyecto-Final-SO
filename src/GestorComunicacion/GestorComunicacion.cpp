@@ -36,9 +36,6 @@ uint32_t GestorComunicacion::liberarSemaforo(std::string nombre_recurso) {
         uint32_t pid_despertado = procesos_bloqueados[nombre_recurso].front();
         procesos_bloqueados[nombre_recurso].pop(); // Lo removemos definitivamente de la cola
         
-        // Se le asigna directamente el recurso al que despertamos (le restamos el permiso que acabamos de meter)
-        semaforos[nombre_recurso]--; 
-        
         // Retornamos su PID. Así quien lo llame puede mover a 'pid_despertado' devuelta a la cola Ready.
         return pid_despertado;
     }

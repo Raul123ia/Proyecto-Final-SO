@@ -1,6 +1,7 @@
 #include "core/Planificador/Planificador.h"
 #include "core/Planificador/Proceso.h"
 #include "core/MotorSimulacion/MotorSimulacion.h"
+#include <algorithm> // Añadido para std::find
 
 // Constructor
 Planificador::Planificador(TipoAlgoritmo _algoritmo, int _quantum)
@@ -126,14 +127,6 @@ void Planificador::ejecutarDespachador() {
                 // Liberamos la CPU y reseteamos el cronómetro
                 pid_en_ejecucion = 0;
                 ticks_ejecutados_quantum = 0;
-                if (tabla_procesos.at(pid_en_ejecucion).obtenerRafagaRestante() == 0) {
-
-                    // liberar memoria
-                    recursos.liberarMemoria(pid_en_ejecucion);
-
-                    // guardar historial
-                    historial_terminados.push_back(pid_en_ejecucion);
-                }
             }
 
             // 2. Si la CPU está libre (ya sea porque el proceso terminó por su cuenta,
@@ -213,8 +206,10 @@ void Planificador::suspender(uint32_t pid) {
         ticks_ejecutados_quantum = 0; 
     }
 
-    // 4. Lo registramos en la cola general de suspendidos del Sistema Operativo
-    cola_suspendidos.push(pid);
+    // 4. Lo registramos en la cola general de suspendidos del Sistema Operativo de forma segura (sin duplicados)
+    if (std::find(cola_suspendidos.begin(), cola_suspendidos.end(), pid) == cola_suspendidos.end()) {
+        cola_suspendidos.push_back(pid);
+    }
     
     // Log opcional para la consola
     // std::cout << "[Kernel] El proceso " << pid << " ha sido suspendido y desalojado de la CPU.\n"; 
@@ -231,16 +226,11 @@ void Planificador::reanudar(uint32_t pid) {
     // 3. Lo metemos a la cola de listos para que vuelva a competir por la CPU
     cola_listos.push(pid);
 
-    /* 
-      NOTA DE ARQUITECTURA: 
-      Idealmente, el proceso debería ser borrado de 'cola_suspendidos'. 
-      Sin embargo, std::queue no permite eliminar elementos intermedios fácilmente.
-      
-      Soluciones comunes a nivel Kernel:
-      A) Cambiar cola_suspendidos a un std::list<uint32_t> que sí permite borrado (p.remove(pid)).
-      B) Ignorar cola_suspendidos para bloqueos de semáforos, ya que tu compañero 
-         de IPC ya mantiene sus propias colas ('procesos_bloqueados') por cada recurso.
-    */
+    // 4. Lo borramos físicamente de la cola de suspendidos visual
+    auto it = std::find(cola_suspendidos.begin(), cola_suspendidos.end(), pid);
+    if (it != cola_suspendidos.end()) {
+        cola_suspendidos.erase(it);
+    }
     
     // Log opcional para la consola
     // std::cout << "[Kernel] El proceso " << pid << " ha sido reanudado y devuelto a la cola de listos.\n";
@@ -265,7 +255,7 @@ const std::unordered_map<uint32_t, Proceso>& Planificador::obtenerTablaProcesos(
 std::queue<uint32_t> Planificador::obtenerColaListos() const {
     return cola_listos;
 }
-std::queue<uint32_t> Planificador::obtenerColaSuspendidos() const {
+std::vector<uint32_t> Planificador::obtenerColaSuspendidos() const {
     return cola_suspendidos;
 }
 
@@ -276,4 +266,18 @@ void Planificador::actualizarMemoriaProceso(uint32_t pid, uint32_t memoria) {
 
 void Planificador::actualizarContadorPrograma(uint32_t pid, int nuevo_contador_programa) {
    tabla_procesos.at(pid).establecerContadorPrograma(nuevo_contador_programa);
+}
+
+void Planificador::establecerAlgoritmo(TipoAlgoritmo nuevo_algoritmo) {
+    algoritmo = nuevo_algoritmo;
+}
+
+TipoAlgoritmo Planificador::obtenerAlgoritmo() const {
+    return algoritmo;
+}
+
+void Planificador::establecerQuantum(int quantum) {
+    if (algoritmo == TipoAlgoritmo::ROUND_ROBIN) {
+        valor_quantum = quantum;
+    }
 }

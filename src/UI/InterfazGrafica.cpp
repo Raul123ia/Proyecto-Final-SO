@@ -15,6 +15,7 @@
 #include <QPushButton>
 #include <QStatusBar>
 #include <QSpinBox>
+#include <QInputDialog>
 #include <QRadioButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -92,20 +93,14 @@ void InterfazGrafica::construirInterfaz()
 
         auto *grupo = new QButtonGroup(&dialog);
         auto *opFcfs = new QRadioButton(tr("FCFS / FIFO"), &dialog);
-        auto *opSjf = new QRadioButton(tr("SJF"), &dialog);
-        auto *opPrioridad = new QRadioButton(tr("Prioridad"), &dialog);
         auto *opRR = new QRadioButton(tr("Round Robin"), &dialog);
 
         grupo->addButton(opFcfs, 0);
-        grupo->addButton(opSjf, 1);
-        grupo->addButton(opPrioridad, 2);
-        grupo->addButton(opRR, 3);
+        grupo->addButton(opRR, 1);
 
         opFcfs->setChecked(true);
 
         layout->addWidget(opFcfs);
-        layout->addWidget(opSjf);
-        layout->addWidget(opPrioridad);
         layout->addWidget(opRR);
 
         auto *botones = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
@@ -115,17 +110,17 @@ void InterfazGrafica::construirInterfaz()
         connect(botones, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
         if (dialog.exec() == QDialog::Accepted) {
-            QString algoritmoSeleccionado = tr("FCFS / FIFO");
-            if (opSjf->isChecked()) {
-                algoritmoSeleccionado = tr("SJF");
-            } else if (opPrioridad->isChecked()) {
-                algoritmoSeleccionado = tr("Prioridad");
-            } else if (opRR->isChecked()) {
-                algoritmoSeleccionado = tr("Round Robin");
-            }
+            TipoAlgoritmo algo = TipoAlgoritmo::FCFS;
+            QString nombreAlgo = tr("FCFS / FIFO");
 
-            btnAlgoritmo->setText(tr("Algoritmo: %1").arg(algoritmoSeleccionado));
-            statusBar()->showMessage(tr("Algoritmo seleccionado: %1").arg(algoritmoSeleccionado), 4000);
+            if (opRR->isChecked()) {
+                algo = TipoAlgoritmo::ROUND_ROBIN;
+                nombreAlgo = tr("Round Robin");
+            }
+            
+            m_motor.establecerAlgoritmoPlanificacion(algo);
+            btnAlgoritmo->setText(tr("Algoritmo: %1").arg(nombreAlgo));
+            statusBar()->showMessage(tr("Algoritmo seleccionado: %1").arg(nombreAlgo), 4000);
         }
     });
     
@@ -329,10 +324,7 @@ void InterfazGrafica::mostrarColasPlanificacion()
             .arg(proc.obtenerPrioridad())); 
     }
 
-    while (!colaSuspendidos.empty()) {
-        uint32_t pid = colaSuspendidos.front();
-        colaSuspendidos.pop();
-        
+    for (uint32_t pid : colaSuspendidos) {
         const Proceso& proc = m_motor.obtenerPlanificador().obtenerDetallesProceso(pid);
         
         m_listaSuspendidos->addItem(QStringLiteral("PID %1 - %2 | Pri %3")
@@ -351,9 +343,18 @@ void InterfazGrafica::listarProcesosYRecursos()
     for (const auto& par : tabla) {
         const Proceso& proceso = par.second; 
 
+        QString estadoAString;
+        switch (proceso.obtenerEstado()) {
+            case EstadoProceso::LISTO: estadoAString = "Listo"; break;
+            case EstadoProceso::EJECUTANDO: estadoAString = "Ejecución"; break;
+            case EstadoProceso::ESPERANDO: estadoAString = "Suspendido"; break;
+            case EstadoProceso::TERMINADO: estadoAString = "Finalizado"; break;
+            default: estadoAString = "Desconocido"; break;
+        }
+
         m_tablaProcesos->setItem(fila, 0, new QTableWidgetItem(QString::number(proceso.obtenerPid())));
         m_tablaProcesos->setItem(fila, 1, new QTableWidgetItem(QString::fromStdString(proceso.obtenerNombre())));
-        m_tablaProcesos->setItem(fila, 2, new QTableWidgetItem(QStringLiteral("Activo"))); 
+        m_tablaProcesos->setItem(fila, 2, new QTableWidgetItem(estadoAString)); 
         m_tablaProcesos->setItem(fila, 3, new QTableWidgetItem(QString::number(proceso.obtenerPrioridad())));
         m_tablaProcesos->setItem(fila, 4, new QTableWidgetItem(QString::number(proceso.obtenerRafagaRestante())));
         m_tablaProcesos->setItem(fila, 5, new QTableWidgetItem(QString::number(proceso.obtenerMemoriaAsignada())));
@@ -414,12 +415,37 @@ void InterfazGrafica::iniciarSimulacionAutomatica()
         return;
     }
 
+    int velocidadMs = spinVelocidad->value();
+    
+    // Si el algoritmo es Round Robin, pedimos el quantum.
+    if (m_motor.obtenerAlgoritmoPlanificacion() == TipoAlgoritmo::ROUND_ROBIN) {
+        bool ok;
+        int quantum = 0;
+
+        while (true) {
+            quantum = QInputDialog::getInt(this, tr("Configurar Round Robin"),
+                                           tr("Quantum (en ticks de reloj):"), 1, 1, velocidadMs - 1, 1, &ok);
+
+            if (!ok) {
+                statusBar()->showMessage(tr("Inicio de simulación cancelado."), 4000);
+                return; // El usuario canceló la entrada del quantum
+            }
+
+            if (quantum < velocidadMs) {
+                m_motor.obtenerPlanificador().establecerQuantum(quantum);
+                break; // El valor es válido, salimos del bucle
+            }
+
+            QMessageBox::warning(this, tr("Valor de Quantum Inválido"),
+                                 tr("El Quantum debe ser menor que la velocidad del reloj (%1 ms).").arg(velocidadMs));
+        }
+    }
+
     m_btnIniciarSimulacion->setEnabled(false);
 
     int cantidad = spinCantidad->value();
     m_motor.inicializarSimulacionAutomatica(cantidad);
 
-    int velocidadMs = spinVelocidad->value();
     m_relojSistema->start(velocidadMs);
 
     actualizarVistas();
